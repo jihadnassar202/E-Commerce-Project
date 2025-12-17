@@ -4,7 +4,7 @@
 
 {% block content %}
   <h1>Products</h1>
-
+  <p><a href="{% url 'product_create' %}">+ Add Product</a></p>
   {% if products %}
     <ul>
       {% for p in products %}
