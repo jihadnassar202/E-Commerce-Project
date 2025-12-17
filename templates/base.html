@@ -7,9 +7,23 @@
 </head>
 <body>
   <nav>
-    <a href="/">Home</a> |
-    <a href="/products/">Products</a> |
-    <a href="/admin/">Admin</a>
+    <nav>
+      <a href="{% url 'home' %}">Home</a> |
+      <a href="{% url 'product_list' %}">Products</a> |
+      <a href="/admin/">Admin</a> |
+    
+      {% if user.is_authenticated %}
+        <span>Hi, {{ user.username }}</span> |
+        <form action="{% url 'logout' %}" method="post" style="display:inline;">
+          {% csrf_token %}
+          <button type="submit">Logout</button>
+        </form>
+      {% else %}
+        <a href="{% url 'login' %}">Login</a>
+      {% endif %}
+    </nav>
+    <hr>
+    
   </nav>
   <hr>
   <main>

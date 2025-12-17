@@ -6,6 +6,7 @@ from .models import Product
 from .forms import ProductForm
 from django.contrib.auth.decorators import login_required
 
+
  
 def product_list(request):
     products = Product.objects.filter(is_active=True).select_related("category").order_by("-created_at")
