@@ -15,3 +15,8 @@
   <a href="{% url 'product_update' product.pk %}">Edit</a> |
   <a href="{% url 'product_delete' product.pk %}">Delete</a>
 </p>
+<form method="post" action="{% url 'cart_add' product.id %}">
+  {% csrf_token %}
+  <button type="submit">Add to cart</button>
+</form>
+<p><a href="{% url 'cart_detail' %}">View cart</a></p>

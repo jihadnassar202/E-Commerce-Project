@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Cart{% endblock %}
+
+{% block content %}
+<h1>Cart</h1>
+
+{% if items %}
+  <ul class="list-group mb-3">
+    {% for it in items %}
+      <li class="list-group-item d-flex justify-content-between align-items-center">
+        <div>
+          <strong>{{ it.product.name }}</strong><br>
+          Qty: {{ it.quantity }}
+        </div>
+        <div>
+          {{ it.line_total }}
+          <form method="post" action="{% url 'cart_remove' it.product.id %}" class="d-inline">
+            {% csrf_token %}
+            <button class="btn btn-sm btn-danger ms-2">Remove</button>
+          </form>
+        </div>
+      </li>
+    {% endfor %}
+  </ul>
+
+  <h4>Total: {{ total }}</h4>
+
+  <form method="post" action="{% url 'checkout' %}">
+    {% csrf_token %}
+    <button class="btn btn-primary">Checkout</button>
+  </form>
+{% else %}
+  <p>Cart is empty.</p>
+{% endif %}
+{% endblock %}

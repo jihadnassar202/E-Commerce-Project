@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<div class="p-4 bg-light rounded">
+  <h1 class="mb-2">Welcome</h1>
+  <p class="mb-3">Browse products or view your cart.</p>
+
+  <a class="btn btn-primary me-2" href="{% url 'product_list' %}">Go to Products</a>
+  <a class="btn btn-outline-secondary" href="{% url 'cart_detail' %}">View Cart</a>
+</div>
+
+<hr class="my-4">
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3 class="m-0">Latest Products</h3>
+  <a class="btn btn-sm btn-outline-dark" href="{% url 'product_list' %}">See all</a>
+</div>
+
+<div class="row">
+  {% for p in latest %}
+    <div class="col-md-4 mb-3">
+      <div class="card h-100">
+        <div class="card-body">
+          <h5 class="card-title">{{ p.name }}</h5>
+          <p class="text-muted mb-2">{{ p.category.name }}</p>
+          <p class="fw-bold">{{ p.price }}</p>
+          <a class="btn btn-sm btn-outline-primary" href="{% url 'product_detail' p.pk %}">View</a>
+        </div>
+      </div>
+    </div>
+  {% empty %}
+    <div class="col-12">
+      <div class="alert alert-warning">
+        No products yet. Add some from Admin.
+      </div>
+    </div>
+  {% endfor %}
+</div>
+{% endblock %}
