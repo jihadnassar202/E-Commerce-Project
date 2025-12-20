@@ -3,7 +3,10 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.shortcuts import render, redirect
 from django.contrib import messages
-from products.models import Product  # add this import
+from products.models import Product  
+from django.contrib.admin.views.decorators import staff_member_required
+from products.models import Category
+from django.shortcuts import get_object_or_404
 
 User = get_user_model()
 
@@ -30,3 +33,36 @@ def manage_sellers(request):
             messages.success(request, f"Granted Seller role to {user.username}.")
         return redirect("manage_sellers")
     return render(request, "core/manage_sellers.html", {"users": users, "seller_group": seller_group})
+
+@staff_member_required
+def category_list(request):
+    categories = Category.objects.all().order_by("name")
+    return render(request, "core/category_list.html", {"categories": categories})
+
+@staff_member_required
+def category_create(request):
+    if request.method == "POST":
+        name = request.POST.get("name", "").strip()
+        is_active = request.POST.get("is_active") == "on"
+        if name:
+            Category.objects.create(name=name, is_active=is_active)
+            messages.success(request, "Category created.")
+            return redirect("category_list")
+        messages.error(request, "Name is required.")
+    return render(request, "core/category_form.html", {"mode": "create"})
+
+@staff_member_required
+def category_update(request, pk):
+    category = get_object_or_404(Category, pk=pk)
+    if request.method == "POST":
+        name = request.POST.get("name", "").strip()
+        is_active = request.POST.get("is_active") == "on"
+        if name:
+            category.name = name
+            category.is_active = is_active
+            category.save()
+            messages.success(request, "Category updated.")
+            return redirect("category_list")
+        messages.error(request, "Name is required.")
+    return render(request, "core/category_form.html", {"mode": "update", "category": category})
+    

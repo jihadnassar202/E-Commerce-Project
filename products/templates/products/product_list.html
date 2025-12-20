@@ -6,7 +6,7 @@
   <h1 class="m-0">Products</h1>
   {% if perms.products.add_product %}
   <a class="btn btn-primary" href="{% url 'product_create' %}">+ Add Product</a>
-{% endif %}
+  {% endif %}
 
 </div>
 
@@ -19,18 +19,18 @@
     <select class="form-select" name="category">
       <option value="">All Categories</option>
       {% for c in categories %}
-        <option value="{{ c.id }}" {% if category_id|stringformat:"s" == c.id|stringformat:"s" %}selected{% endif %}>
-          {{ c.name }}
-        </option>
+      <option value="{{ c.id }}" {% if category_id|stringformat:"s"==c.id|stringformat:"s" %}selected{% endif %}>
+        {{ c.name }}
+      </option>
       {% endfor %}
     </select>
   </div>
 
   <div class="col-md-2">
     <select class="form-select" name="sort">
-      <option value="newest" {% if sort == "newest" %}selected{% endif %}>Newest</option>
-      <option value="price_asc" {% if sort == "price_asc" %}selected{% endif %}>Price ↑</option>
-      <option value="price_desc" {% if sort == "price_desc" %}selected{% endif %}>Price ↓</option>
+      <option value="newest" {% if sort=="newest" %}selected{% endif %}>Newest</option>
+      <option value="price_asc" {% if sort=="price_asc" %}selected{% endif %}>Price ↑</option>
+      <option value="price_desc" {% if sort=="price_desc" %}selected{% endif %}>Price ↓</option>
     </select>
   </div>
 
@@ -41,32 +41,31 @@
 
 <div class="row">
   {% for p in page_obj %}
-    <div class="col-md-4 mb-4">
-      <div class="card h-100">
-        <div class="card-body">
-          <h5 class="card-title">{{ p.name }}</h5>
-          <p class="card-text text-muted">{{ p.category.name }}</p>
-          <p class="fw-bold">{{ p.price }}</p>
-          <div class="d-flex gap-2">
-            <a href="{% url 'product_detail' p.pk %}"
-               class="btn btn-sm btn-outline-primary">
-              View
-            </a>
-          
-            <form method="post"
-                  action="{% url 'cart_add' p.id %}">
-              {% csrf_token %}
-              <button type="submit"
-                      class="btn btn-sm btn-success">
-                Add to cart
-              </button>
-            </form>
-          </div>
-                  </div>
+  <div class="col-md-4 mb-4">
+    <div class="card h-100">
+      {% if p.image %}
+  <img src="{{ p.image.url }}" class="card-img
+      <div class="card-body">
+        <h5 class="card-title">{{ p.name }}</h5>
+        <p class="card-text text-muted">{{ p.category.name }}</p>
+        <p class="fw-bold">{{ p.price }}</p>
+        <div class="d-flex gap-2">
+          <a href="{% url 'product_detail' p.pk %}" class="btn btn-sm btn-outline-primary">
+            View
+          </a>
+
+          <form method="post" action="{% url 'cart_add' p.id %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-sm btn-success">
+              Add to cart
+            </button>
+          </form>
+        </div>
       </div>
     </div>
+  </div>
   {% empty %}
-    <p>No products found.</p>
+  <p>No products found.</p>
   {% endfor %}
 </div>
 
@@ -74,11 +73,12 @@
 <nav aria-label="Products pagination">
   <ul class="pagination">
     {% if page_obj.has_previous %}
-      <li class="page-item">
-        <a class="page-link" href="?q={{ q }}&category={{ category_id }}&sort={{ sort }}&page={{ page_obj.previous_page_number }}">Previous</a>
-      </li>
+    <li class="page-item">
+      <a class="page-link"
+        href="?q={{ q }}&category={{ category_id }}&sort={{ sort }}&page={{ page_obj.previous_page_number }}">Previous</a>
+    </li>
     {% else %}
-      <li class="page-item disabled"><span class="page-link">Previous</span></li>
+    <li class="page-item disabled"><span class="page-link">Previous</span></li>
     {% endif %}
 
     <li class="page-item disabled">
@@ -88,11 +88,12 @@
     </li>
 
     {% if page_obj.has_next %}
-      <li class="page-item">
-        <a class="page-link" href="?q={{ q }}&category={{ category_id }}&sort={{ sort }}&page={{ page_obj.next_page_number }}">Next</a>
-      </li>
+    <li class="page-item">
+      <a class="page-link"
+        href="?q={{ q }}&category={{ category_id }}&sort={{ sort }}&page={{ page_obj.next_page_number }}">Next</a>
+    </li>
     {% else %}
-      <li class="page-item disabled"><span class="page-link">Next</span></li>
+    <li class="page-item disabled"><span class="page-link">Next</span></li>
     {% endif %}
   </ul>
 </nav>

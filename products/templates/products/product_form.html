@@ -4,10 +4,14 @@
 {% block content %}
   <h1>{% if mode == "create" %}New Product{% else %}Edit Product{% endif %}</h1>
 
-  <form method="post" enctype="multipart/form-data">
+  <form method="post" enctype="multipart/form-data" class="card card-body shadow-sm">
     {% csrf_token %}
     {{ form.as_p }}
-    <button type="submit" class="btn btn-primary">{% if mode == "create" %}Create{% else %}Save{% endif %}</button>
-    <a class="btn btn-outline-secondary" href="{% url 'product_list' %}">Cancel</a>
+    <div class="d-flex gap-2">
+      <button type="submit" class="btn btn-primary">
+        {% if mode == "create" %}Create{% else %}Save{% endif %}
+      </button>
+      <a class="btn btn-outline-secondary" href="{% url 'product_list' %}">Cancel</a>
+    </div>
   </form>
   {% endblock %}

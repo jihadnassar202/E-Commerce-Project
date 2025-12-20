@@ -9,4 +9,7 @@ urlpatterns = [
     path("logout/", auth_views.LogoutView.as_view(), name="logout"),
     path("signup/", accounts_views.register, name="signup"),
     path("manage-sellers/", views.manage_sellers, name="manage_sellers"),
+    path("categories/", views.category_list, name="category_list"),
+path("categories/new/", views.category_create, name="category_create"),
+path("categories/<int:pk>/edit/", views.category_update, name="category_update"),
 ]
