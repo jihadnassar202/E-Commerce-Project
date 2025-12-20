@@ -5,12 +5,11 @@
 <div class="d-flex justify-content-between align-items-center mb-3">
   <h1 class="m-0">Products</h1>
   {% if perms.products.add_product %}
-  <a class="btn btn-primary" href="{% url 'product_create' %}">+ Add Product</a>
+    <a class="btn btn-primary" href="{% url 'product_create' %}">+ Add Product</a>
   {% endif %}
-
 </div>
 
-<form method="get" class="row g-2 mb-4">
+<form id="filters-form" method="get" class="row g-2 mb-4">
   <div class="col-md-5">
     <input class="form-control" type="text" name="q" placeholder="Search..." value="{{ q }}">
   </div>
@@ -19,83 +18,75 @@
     <select class="form-select" name="category">
       <option value="">All Categories</option>
       {% for c in categories %}
-      <option value="{{ c.id }}" {% if category_id|stringformat:"s"==c.id|stringformat:"s" %}selected{% endif %}>
-        {{ c.name }}
-      </option>
+        <option value="{{ c.id }}" {% if category_id|stringformat:"s" == c.id|stringformat:"s" %}selected{% endif %}>
+          {{ c.name }}
+        </option>
       {% endfor %}
     </select>
   </div>
 
   <div class="col-md-2">
     <select class="form-select" name="sort">
-      <option value="newest" {% if sort=="newest" %}selected{% endif %}>Newest</option>
-      <option value="price_asc" {% if sort=="price_asc" %}selected{% endif %}>Price ↑</option>
-      <option value="price_desc" {% if sort=="price_desc" %}selected{% endif %}>Price ↓</option>
+      <option value="newest" {% if sort == "newest" %}selected{% endif %}>Newest</option>
+      <option value="price_asc" {% if sort == "price_asc" %}selected{% endif %}>Price ↑</option>
+      <option value="price_desc" {% if sort == "price_desc" %}selected{% endif %}>Price ↓</option>
     </select>
   </div>
 
   <div class="col-md-2 d-grid">
-    <button class="btn btn-dark" type="submit">Apply</button>
+    <div class="d-flex gap-2">
+      <button class="btn btn-dark flex-fill" type="submit">Apply</button>
+      <button class="btn btn-secondary flex-fill" type="button" id="clear-filters">Clear</button>
+    </div>
   </div>
 </form>
 
-<div class="row">
-  {% for p in page_obj %}
-  <div class="col-md-4 mb-4">
-    <div class="card h-100">
-      {% if p.image %}
-  <img src="{{ p.image.url }}" class="card-img
-      <div class="card-body">
-        <h5 class="card-title">{{ p.name }}</h5>
-        <p class="card-text text-muted">{{ p.category.name }}</p>
-        <p class="fw-bold">{{ p.price }}</p>
-        <div class="d-flex gap-2">
-          <a href="{% url 'product_detail' p.pk %}" class="btn btn-sm btn-outline-primary">
-            View
-          </a>
+{% include "products/_product_grid.html" %}
+{% include "products/_pagination.html" %}
 
-          <form method="post" action="{% url 'cart_add' p.id %}">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-sm btn-success">
-              Add to cart
-            </button>
-          </form>
-        </div>
-      </div>
-    </div>
-  </div>
-  {% empty %}
-  <p>No products found.</p>
-  {% endfor %}
-</div>
+<script>
+(function() {
+  const form = document.querySelector("#filters-form") || document.querySelector("form");
+  const gridContainer = document.querySelector("#product-grid").parentElement;
+  const paginationContainer = document.querySelector(".pagination")?.parentElement || gridContainer;
 
-{% if page_obj.paginator.num_pages > 1 %}
-<nav aria-label="Products pagination">
-  <ul class="pagination">
-    {% if page_obj.has_previous %}
-    <li class="page-item">
-      <a class="page-link"
-        href="?q={{ q }}&category={{ category_id }}&sort={{ sort }}&page={{ page_obj.previous_page_number }}">Previous</a>
-    </li>
-    {% else %}
-    <li class="page-item disabled"><span class="page-link">Previous</span></li>
-    {% endif %}
+  function fetchProducts(page = null) {
+    const params = new URLSearchParams(new FormData(form));
+    if (page) params.set("page", page);
+    fetch("{% url 'product_list_api' %}?" + params.toString(), {
+      headers: { "X-Requested-With": "XMLHttpRequest" }
+    })
+    .then(r => r.json())
+    .then(data => {
+      gridContainer.innerHTML = data.html;
+      paginationContainer.innerHTML = data.pagination;
+      wirePagination();
+    });
+  }
 
-    <li class="page-item disabled">
-      <span class="page-link">
-        Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}
-      </span>
-    </li>
+  function wirePagination() {
+    document.querySelectorAll("[data-page]").forEach(link => {
+      link.addEventListener("click", (e) => {
+        e.preventDefault();
+        fetchProducts(e.target.getAttribute("data-page"));
+      });
+    });
+  }
 
-    {% if page_obj.has_next %}
-    <li class="page-item">
-      <a class="page-link"
-        href="?q={{ q }}&category={{ category_id }}&sort={{ sort }}&page={{ page_obj.next_page_number }}">Next</a>
-    </li>
-    {% else %}
-    <li class="page-item disabled"><span class="page-link">Next</span></li>
-    {% endif %}
-  </ul>
-</nav>
-{% endif %}
+  form.addEventListener("submit", (e) => {
+    e.preventDefault();
+    fetchProducts();
+  });
+
+  const clearBtn = document.querySelector("#clear-filters");
+  if (clearBtn) {
+    clearBtn.addEventListener("click", () => {
+      form.reset();
+      fetchProducts();
+    });
+  }
+
+  wirePagination();
+})();
+</script>
 {% endblock %}

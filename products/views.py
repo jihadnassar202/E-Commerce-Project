@@ -3,7 +3,8 @@ from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
-
+from django.template.loader import render_to_string
+from django.http import JsonResponse
 from .decorators import seller_required
 from .forms import ProductForm
 from .models import Product, Category
@@ -41,6 +42,37 @@ def product_list(request):
         "category_id": category_id,
         "sort": sort,
     })
+
+def product_list_api(request):
+    q = request.GET.get("q", "").strip()
+    category_id = request.GET.get("category", "").strip()
+    sort = request.GET.get("sort", "newest").strip()
+
+    products = Product.objects.filter(is_active=True).select_related("category")
+    if q:
+        products = products.filter(
+            Q(name__icontains=q) | Q(description__icontains=q) | Q(category__name__icontains=q)
+        )
+    if category_id:
+        products = products.filter(category_id=category_id)
+    if sort == "price_asc":
+        products = products.order_by("price")
+    elif sort == "price_desc":
+        products = products.order_by("-price")
+    else:
+        products = products.order_by("-created_at")
+
+    paginator = Paginator(products, 9)
+    page_obj = paginator.get_page(request.GET.get("page"))
+
+    html = render_to_string("products/_product_grid.html", {"page_obj": page_obj}, request=request)
+    pagination = render_to_string("products/_pagination.html", {
+        "page_obj": page_obj,
+        "q": q,
+        "category_id": category_id,
+        "sort": sort,
+    }, request=request)
+    return JsonResponse({"html": html, "pagination": pagination})
 
 def product_detail(request, pk):
     product = get_object_or_404(Product, pk=pk, is_active=True)

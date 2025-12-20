@@ -1,0 +1,25 @@
+<div class="row" id="product-grid">
+    {% for p in page_obj %}
+      <div class="col-md-4 mb-4">
+        <div class="card h-100">
+          {% if p.image %}
+            <img src="{{ p.image.url }}" class="card-img-top" alt="{{ p.name }}">
+          {% endif %}
+          <div class="card-body">
+            <h5 class="card-title">{{ p.name }}</h5>
+            <p class="card-text text-muted">{{ p.category.name }}</p>
+            <p class="fw-bold">{{ p.price }}</p>
+            <div class="d-flex gap-2">
+              <a href="{% url 'product_detail' p.pk %}" class="btn btn-sm btn-outline-primary">View</a>
+              <form method="post" action="{% url 'cart_add' p.id %}">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-success">Add to cart</button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    {% empty %}
+      <p>No products found.</p>
+    {% endfor %}
+  </div>
