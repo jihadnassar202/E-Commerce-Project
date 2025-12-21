@@ -51,7 +51,8 @@ A small e-commerce demo with role-based seller controls, product CRUD with image
 - Category model with `is_active`; staff UI for create/update/list.
 - Role-based seller gating for create/edit/delete.
 - Product listing with Bootstrap cards, server pagination, and AJAX search/filter + clear.
-- Cart and checkout creating orders/order items.
+- Cart with quantity updates; checkout creates orders/order items, captures status and total.
+- Stock enforcement on add-to-cart/checkout; sold-out cards disable cart button.
 - Auth flows: login, logout, register; navbar shows role-aware links.
 
 ## Media & static
@@ -64,7 +65,6 @@ python manage.py check
 ```
 
 ## Notes / gaps to address
-- Inventory enforcement and sold-out indicators.
 - Delete via Bootstrap modal.
 - Navbar search/filter placement per spec.
-- Stock checks on add-to-cart/checkout and quantity updates in cart.
+- Sold-out badge shown; consider additional visual cues if needed.
