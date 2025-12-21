@@ -9,7 +9,16 @@
   {% endif %}
 </div>
 
+{% if mine == "1" %}
+<div class="alert alert-info">
+  <strong>My Products:</strong> Showing only products you own. <a href="{% url 'product_list' %}" class="alert-link">View all products</a>
+</div>
+{% endif %}
+
 <form id="filters-form" method="get" class="row g-2 mb-4">
+  {% if mine == "1" %}
+  <input type="hidden" name="mine" value="1">
+  {% endif %}
   <div class="col-md-5">
     <input class="form-control" type="text" name="q" placeholder="Search..." value="{{ q }}">
   </div>
@@ -53,6 +62,9 @@
   function fetchProducts(page = null) {
     const params = new URLSearchParams(new FormData(form));
     if (page) params.set("page", page);
+    {% if mine == "1" %}
+    params.set("mine", "1");
+    {% endif %}
     fetch("{% url 'product_list_api' %}?" + params.toString(), {
       headers: { "X-Requested-With": "XMLHttpRequest" }
     })

@@ -45,7 +45,7 @@
       {% endif %}
 
       {% if perms.products.delete_product %}
-      <a class="btn btn-sm btn-outline-danger" href="{% url 'product_delete' product.pk %}">Delete</a>
+      <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">Delete</button>
       {% endif %}
     </div>
     {% endif %}
@@ -55,4 +55,29 @@
     </div>
   </div>
 </div>
+
+<!-- Delete Confirmation Modal -->
+{% if perms.products.delete_product %}
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="deleteModalLabel">Delete Product</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <p>Are you sure you want to delete <strong>{{ product.name }}</strong>?</p>
+        <p class="text-danger">This action cannot be undone.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+        <form method="post" action="{% url 'product_delete' product.pk %}" class="d-inline">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger">Delete</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
 {% endblock %}

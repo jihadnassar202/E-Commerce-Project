@@ -5,6 +5,7 @@ from django.db.models import Q
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.http import JsonResponse
+from django.contrib.admin.views.decorators import staff_member_required
 from .decorators import seller_required
 from .forms import ProductForm
 from .models import Product, Category
@@ -13,8 +14,14 @@ def product_list(request):
     q = request.GET.get("q", "").strip()
     category_id = request.GET.get("category", "").strip()
     sort = request.GET.get("sort", "newest").strip()
+    mine = request.GET.get("mine", "").strip()
 
     products = Product.objects.filter(is_active=True).select_related("category")
+
+    # Filter by owner if mine=1 and user is seller/admin
+    if mine == "1" and request.user.is_authenticated:
+        if request.user.is_superuser or request.user.groups.filter(name="Seller").exists():
+            products = products.filter(owner=request.user)
 
     if q:
         products = products.filter(
@@ -41,14 +48,22 @@ def product_list(request):
         "q": q,
         "category_id": category_id,
         "sort": sort,
+        "mine": mine,
     })
 
 def product_list_api(request):
     q = request.GET.get("q", "").strip()
     category_id = request.GET.get("category", "").strip()
     sort = request.GET.get("sort", "newest").strip()
+    mine = request.GET.get("mine", "").strip()
 
     products = Product.objects.filter(is_active=True).select_related("category")
+    
+    # Filter by owner if mine=1 and user is seller/admin
+    if mine == "1" and request.user.is_authenticated:
+        if request.user.is_superuser or request.user.groups.filter(name="Seller").exists():
+            products = products.filter(owner=request.user)
+    
     if q:
         products = products.filter(
             Q(name__icontains=q) | Q(description__icontains=q) | Q(category__name__icontains=q)
@@ -71,6 +86,7 @@ def product_list_api(request):
         "q": q,
         "category_id": category_id,
         "sort": sort,
+        "mine": mine,
     }, request=request)
     return JsonResponse({"html": html, "pagination": pagination})
 
@@ -119,4 +135,52 @@ def product_delete(request, pk):
         product.delete()
         messages.success(request, "Product deleted.")
         return redirect("product_list")
-    return render(request, "products/product_confirm_delete.html", {"product": product})
+    # Should not reach here - modal handles confirmation
+    return redirect("product_detail", pk=pk)
+
+@login_required
+def product_list_admin(request):
+    """Product list for admin/sellers showing additional information."""
+    if not (request.user.is_superuser or request.user.groups.filter(name="Seller").exists()):
+        from django.core.exceptions import PermissionDenied
+        raise PermissionDenied
+    
+    q = request.GET.get("q", "").strip()
+    category_id = request.GET.get("category", "").strip()
+    sort = request.GET.get("sort", "newest").strip()
+    mine = request.GET.get("mine", "").strip()
+
+    # Show all products (including inactive) for admin/sellers
+    products = Product.objects.all().select_related("category", "owner")
+
+    # Filter by owner if mine=1
+    if mine == "1":
+        products = products.filter(owner=request.user)
+
+    if q:
+        products = products.filter(
+            Q(name__icontains=q) | Q(description__icontains=q) | Q(category__name__icontains=q)
+        )
+
+    if category_id:
+        products = products.filter(category_id=category_id)
+
+    if sort == "price_asc":
+        products = products.order_by("price")
+    elif sort == "price_desc":
+        products = products.order_by("-price")
+    else:
+        products = products.order_by("-created_at")
+
+    categories = Category.objects.filter(is_active=True).order_by("name")
+    paginator = Paginator(products, 15)
+    page_obj = paginator.get_page(request.GET.get("page"))
+
+    return render(request, "products/product_list_admin.html", {
+        "categories": categories,
+        "page_obj": page_obj,
+        "q": q,
+        "category_id": category_id,
+        "sort": sort,
+        "mine": mine,
+    })
