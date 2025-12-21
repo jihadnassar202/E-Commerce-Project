@@ -4,6 +4,7 @@
 {% block content %}
   <h1>Order created ✅</h1>
   <p>Order ID: <b>#{{ order.pk }}</b></p>
+  <p>Status: <b>{{ order.get_status_display }}</b></p>
   <p>Total items: {{ order.items.count }}</p>
 
   <ul>

@@ -2,12 +2,33 @@
 {% block title %}Checkout{% endblock %}
 
 {% block content %}
-  <h1>Checkout</h1>
-  <p>This will create an order (no payment yet).</p>
+  <h1 class="mb-3">Checkout</h1>
 
-  <form method="post">
-    {% csrf_token %}
-    <button type="submit">Confirm Order</button>
-    <a href="{% url 'cart_detail' %}">Back to cart</a>
-  </form>
+  {% if items %}
+    <div class="card shadow-sm mb-3">
+      <ul class="list-group list-group-flush">
+        {% for it in items %}
+          <li class="list-group-item d-flex justify-content-between">
+            <div>
+              <div class="fw-bold">{{ it.product.name }}</div>
+              <div class="text-muted small">Qty: {{ it.quantity }}</div>
+            </div>
+            <div class="fw-bold">{{ it.line_total }}</div>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <div class="d-flex justify-content-between align-items-center mb-3">
+      <h4 class="m-0">Total: {{ total }}</h4>
+      <a class="btn btn-outline-secondary" href="{% url 'cart_detail' %}">Back to cart</a>
+    </div>
+
+    <form method="post">
+      {% csrf_token %}
+      <button type="submit" class="btn btn-primary">Confirm Order</button>
+    </form>
+  {% else %}
+    <div class="alert alert-info">No items to checkout.</div>
+  {% endif %}
 {% endblock %}

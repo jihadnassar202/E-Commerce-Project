@@ -2,34 +2,47 @@
 {% block title %}Cart{% endblock %}
 
 {% block content %}
-<h1>Cart</h1>
+<h1 class="mb-3">Cart</h1>
 
 {% if items %}
-  <ul class="list-group mb-3">
-    {% for it in items %}
-      <li class="list-group-item d-flex justify-content-between align-items-center">
-        <div>
-          <strong>{{ it.product.name }}</strong><br>
-          Qty: {{ it.quantity }}
-        </div>
-        <div>
-          {{ it.line_total }}
-          <form method="post" action="{% url 'cart_remove' it.product.id %}" class="d-inline">
-            {% csrf_token %}
-            <button class="btn btn-sm btn-danger ms-2">Remove</button>
-          </form>
-        </div>
-      </li>
-    {% endfor %}
-  </ul>
+  <div class="card shadow-sm mb-3">
+    <ul class="list-group list-group-flush">
+      {% for it in items %}
+        <li class="list-group-item">
+          <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+            <div>
+              <div class="fw-bold">{{ it.product.name }}</div>
+              <div class="text-muted small">Price: {{ it.product.price }} | Stock: {{ it.product.stock }}</div>
+              {% if it.product.stock == 0 %}
+                <div class="text-danger small">Sold out</div>
+              {% endif %}
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <form method="post" action="{% url 'cart_update' it.product.id %}" class="d-flex align-items-center gap-2">
+                {% csrf_token %}
+                <input class="form-control form-control-sm" style="width:90px" type="number" min="0" name="quantity" value="{{ it.quantity }}">
+                <button class="btn btn-sm btn-outline-secondary">Update</button>
+              </form>
+              <form method="post" action="{% url 'cart_remove' it.product.id %}">
+                {% csrf_token %}
+                <button class="btn btn-sm btn-danger">Remove</button>
+              </form>
+            </div>
+            <div class="fw-bold">{{ it.line_total }}</div>
+          </div>
+        </li>
+      {% endfor %}
+    </ul>
+  </div>
 
-  <h4>Total: {{ total }}</h4>
-
-  <form method="post" action="{% url 'checkout' %}">
-    {% csrf_token %}
-    <button class="btn btn-primary">Checkout</button>
-  </form>
+  <div class="d-flex justify-content-between align-items-center">
+    <h4 class="m-0">Total: {{ total }}</h4>
+    <form method="post" action="{% url 'checkout' %}">
+      {% csrf_token %}
+      <button class="btn btn-primary">Checkout</button>
+    </form>
+  </div>
 {% else %}
-  <p>Cart is empty.</p>
+  <div class="alert alert-info">Cart is empty.</div>
 {% endif %}
 {% endblock %}

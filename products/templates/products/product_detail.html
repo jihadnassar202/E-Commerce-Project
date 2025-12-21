@@ -8,6 +8,9 @@
     {% if product.image %}
   <img src="{{ product.image.url }}" class="img-fluid mb-3" alt="{{ product.name }}">
 {% endif %}
+    {% if product.stock == 0 %}
+      <span class="badge bg-danger mb-2">Sold Out</span>
+    {% endif %}
 
     <p class="text-muted mb-1">
       <strong>Category:</strong> {{ product.category.name }}
@@ -26,8 +29,8 @@
     <!-- ADD TO CART -->
     <form method="post" action="{% url 'cart_add' product.id %}" class="mt-3">
       {% csrf_token %}
-      <button type="submit" class="btn btn-success">
-        Add to cart
+      <button type="submit" class="btn btn-success" {% if product.stock == 0 %}disabled{% endif %}>
+        {% if product.stock == 0 %}Sold out{% else %}Add to cart{% endif %}
       </button>
     </form>
 

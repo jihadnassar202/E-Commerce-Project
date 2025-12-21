@@ -6,6 +6,9 @@
             <img src="{{ p.image.url }}" class="card-img-top" alt="{{ p.name }}">
           {% endif %}
           <div class="card-body">
+            {% if p.stock == 0 %}
+              <span class="badge bg-danger mb-2">Sold Out</span>
+            {% endif %}
             <h5 class="card-title">{{ p.name }}</h5>
             <p class="card-text text-muted">{{ p.category.name }}</p>
             <p class="fw-bold">{{ p.price }}</p>
@@ -13,7 +16,9 @@
               <a href="{% url 'product_detail' p.pk %}" class="btn btn-sm btn-outline-primary">View</a>
               <form method="post" action="{% url 'cart_add' p.id %}">
                 {% csrf_token %}
-                <button type="submit" class="btn btn-sm btn-success">Add to cart</button>
+                <button type="submit" class="btn btn-sm btn-success" {% if p.stock == 0 %}disabled{% endif %}>
+                  {% if p.stock == 0 %}Sold out{% else %}Add to cart{% endif %}
+                </button>
               </form>
             </div>
           </div>

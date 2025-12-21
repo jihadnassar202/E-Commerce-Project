@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Order #{{ order.id }}{% endblock %}
+
+{% block content %}
+<h1 class="mb-2">Order #{{ order.id }}</h1>
+<p class="text-muted mb-1">Status: <b>{{ order.get_status_display }}</b></p>
+<p class="text-muted mb-3">Placed: {{ order.created_at }}</p>
+
+<div class="card shadow-sm mb-3">
+  <ul class="list-group list-group-flush">
+    {% for item in order.items.all %}
+      <li class="list-group-item d-flex justify-content-between">
+        <div>
+          <div class="fw-bold">{{ item.product.name }}</div>
+          <div class="text-muted small">Qty: {{ item.quantity }} @ {{ item.price_at_purchase }}</div>
+        </div>
+        <div class="fw-bold">{{ item.line_total }}</div>
+      </li>
+    {% endfor %}
+  </ul>
+</div>
+
+<h4>Total: {{ order.total }}</h4>
+
+<a class="btn btn-outline-secondary mt-2" href="{% url 'my_orders' %}">Back to my orders</a>
+{% endblock %}
+

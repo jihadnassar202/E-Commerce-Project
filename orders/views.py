@@ -3,6 +3,7 @@ from decimal import Decimal
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
+from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
 
 from products.models import Product
@@ -45,13 +46,56 @@ def cart_add(request, product_id):
         return redirect("product_detail", pk=product_id)
 
     product = get_object_or_404(Product, pk=product_id, is_active=True)
+
+    if product.stock <= 0:
+        messages.error(request, f"{product.name} is sold out.")
+        return redirect("product_detail", pk=product_id)
+
     cart = _get_cart(request.session)
-
     pid = str(product.id)
-    cart[pid] = int(cart.get(pid, 0)) + 1
+    current_qty = int(cart.get(pid, 0))
 
+    if current_qty >= product.stock:
+        messages.error(request, f"Only {product.stock} left in stock.")
+        return redirect("cart_detail")
+
+    cart[pid] = current_qty + 1
     request.session.modified = True
     messages.success(request, f"Added {product.name} to cart.")
+    return redirect("cart_detail")
+
+
+def cart_update(request, product_id):
+    """
+    Update quantity for a cart item.
+    """
+    if request.method != "POST":
+        return redirect("cart_detail")
+
+    cart = _get_cart(request.session)
+    pid = str(product_id)
+    if pid not in cart:
+        return redirect("cart_detail")
+
+    try:
+        qty = int(request.POST.get("quantity", "1"))
+    except ValueError:
+        qty = 1
+
+    if qty <= 0:
+        del cart[pid]
+        request.session.modified = True
+        messages.success(request, "Item removed.")
+        return redirect("cart_detail")
+
+    product = get_object_or_404(Product, pk=product_id, is_active=True)
+    if qty > product.stock:
+        messages.error(request, f"Only {product.stock} left in stock.")
+        qty = product.stock
+
+    cart[pid] = qty
+    request.session.modified = True
+    messages.success(request, "Quantity updated.")
     return redirect("cart_detail")
 
 
@@ -78,29 +122,73 @@ def checkout(request):
         messages.error(request, "Your cart is empty.")
         return redirect("product_list")
 
+    ids = [int(pid) for pid in cart.keys()]
+    products = list(Product.objects.filter(id__in=ids, is_active=True))
+
+    # Build items for display regardless of method
+    items = []
+    total = Decimal("0.00")
+    for p in products:
+        qty = int(cart.get(str(p.id), 0))
+        line_total = p.price * qty
+        items.append({"product": p, "quantity": qty, "line_total": line_total})
+        total += line_total
+
     if request.method == "POST":
-        ids = [int(pid) for pid in cart.keys()]
-        products = Product.objects.filter(id__in=ids, is_active=True)
+        try:
+            with transaction.atomic():
+                locked_products = (
+                    Product.objects.select_for_update()
+                    .filter(id__in=ids, is_active=True)
+                )
+                locked_map = {p.id: p for p in locked_products}
 
-        order = Order.objects.create(user=request.user, is_paid=False)
+                for pid_str, qty in cart.items():
+                    pid = int(pid_str)
+                    product = locked_map.get(pid)
+                    if not product or product.stock < qty or product.stock <= 0:
+                        messages.error(
+                            request,
+                            f"Insufficient stock for {product.name if product else 'item'}."
+                        )
+                        return redirect("cart_detail")
 
-        for p in products:
-            qty = int(cart.get(str(p.id), 0))
-            if qty > 0:
-                OrderItem.objects.create(
-                    order=order,
-                    product=p,
-                    quantity=qty,
-                    price_at_purchase=p.price,
+                order = Order.objects.create(
+                    user=request.user,
+                    status=Order.STATUS_PENDING,
+                    is_paid=False,
+                    total_amount=Decimal("0.00"),
                 )
 
-        request.session["cart"] = {}
-        request.session.modified = True
+                running_total = Decimal("0.00")
+                for pid_str, qty in cart.items():
+                    pid = int(pid_str)
+                    product = locked_map[pid]
+                    OrderItem.objects.create(
+                        order=order,
+                        product=product,
+                        quantity=qty,
+                        price_at_purchase=product.price,
+                    )
+                    running_total += product.price * qty
+                    product.stock -= qty
+                    product.save(update_fields=["stock"])
 
-        messages.success(request, f"Order #{order.pk} created ✅")
-        return redirect("order_success", order_id=order.pk)
+                order.total_amount = running_total
+                order.status = Order.STATUS_PAID  # mock payment success
+                order.is_paid = True
+                order.save(update_fields=["total_amount", "status", "is_paid"])
 
-    return render(request, "orders/checkout.html")
+                request.session["cart"] = {}
+                request.session.modified = True
+
+                messages.success(request, f"Order #{order.pk} created ✅")
+                return redirect("order_success", order_id=order.pk)
+        except Exception:
+            messages.error(request, "Could not complete checkout. Please try again.")
+            return redirect("cart_detail")
+
+    return render(request, "orders/checkout.html", {"items": items, "total": total})
 
 
 @login_required
