@@ -2,23 +2,42 @@
 {% block title %}Manage Sellers{% endblock %}
 {% block content %}
 <h2>Manage Sellers</h2>
-<table class="table">
-  <thead><tr><th>User</th><th>Seller?</th><th></th></tr></thead>
+
+<table class="table table-striped align-middle">
+  <thead>
+    <tr>
+      <th>User</th>
+      <th>Email</th>
+      <th>Seller?</th>
+      <th></th>
+    </tr>
+  </thead>
   <tbody>
-  {% for u in users %}
+    {% for u in users %}
     <tr>
       <td>{{ u.username }}</td>
-      <td>{{ u.groups.filter(name='Seller').exists|yesno:"Yes,No" }}</td>
+      <td>{{ u.email|default:"—" }}</td>
+
+      <td>
+        {% if u.is_superuser or u.id in seller_ids %}
+          Yes
+        {% else %}
+          No
+        {% endif %}
+      </td>
+
       <td>
         <form method="post">{% csrf_token %}
           <input type="hidden" name="user_id" value="{{ u.id }}">
-          <button class="btn btn-sm {% if u.groups.filter(name='Seller').exists %}btn-danger{% else %}btn-success{% endif %}">
-            {% if u.groups.filter(name='Seller').exists %}Revoke Seller{% else %}Grant Seller{% endif %}
-          </button>
+          {% if u.id in seller_ids %}
+            <button class="btn btn-sm btn-danger">Remove Seller</button>
+          {% else %}
+            <button class="btn btn-sm btn-success">Make Seller</button>
+          {% endif %}
         </form>
       </td>
     </tr>
-  {% endfor %}
+    {% endfor %}
   </tbody>
 </table>
 {% endblock %}

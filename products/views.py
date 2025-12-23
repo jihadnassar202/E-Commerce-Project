@@ -1,14 +1,17 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.core.exceptions import PermissionDenied
 from django.core.paginator import Paginator
 from django.db.models import Q
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
-from django.http import JsonResponse
 from django.contrib.admin.views.decorators import staff_member_required
+from core.utils import is_seller
 from .decorators import seller_required
 from .forms import ProductForm
-from .models import Product, Category
+from .models import Category, Product
+
 
 def product_list(request):
     q = request.GET.get("q", "").strip()
@@ -16,15 +19,16 @@ def product_list(request):
     sort = request.GET.get("sort", "newest").strip()
     mine = request.GET.get("mine", "").strip()
 
-    products = Product.objects.filter(is_active=True).select_related("category")
+    products = Product.objects.filter(
+        is_active=True).select_related("category")
 
-    if mine == "1" and request.user.is_authenticated:
-        if request.user.is_superuser or request.user.groups.filter(name="Seller").exists():
-            products = products.filter(owner=request.user)
+    if mine == "1" and is_seller(request.user):
+        products = products.filter(owner=request.user)
 
     if q:
         products = products.filter(
-            Q(name__icontains=q) | Q(description__icontains=q) | Q(category__name__icontains=q)
+            Q(name__icontains=q) | Q(description__icontains=q) | Q(
+                category__name__icontains=q)
         )
 
     if category_id:
@@ -50,21 +54,23 @@ def product_list(request):
         "mine": mine,
     })
 
+
 def product_list_api(request):
     q = request.GET.get("q", "").strip()
     category_id = request.GET.get("category", "").strip()
     sort = request.GET.get("sort", "newest").strip()
     mine = request.GET.get("mine", "").strip()
 
-    products = Product.objects.filter(is_active=True).select_related("category")
-    
-    if mine == "1" and request.user.is_authenticated:
-        if request.user.is_superuser or request.user.groups.filter(name="Seller").exists():
-            products = products.filter(owner=request.user)
-    
+    products = Product.objects.filter(
+        is_active=True).select_related("category")
+
+    if mine == "1" and is_seller(request.user):
+        products = products.filter(owner=request.user)
+
     if q:
         products = products.filter(
-            Q(name__icontains=q) | Q(description__icontains=q) | Q(category__name__icontains=q)
+            Q(name__icontains=q) | Q(description__icontains=q) | Q(
+                category__name__icontains=q)
         )
     if category_id:
         products = products.filter(category_id=category_id)
@@ -78,7 +84,8 @@ def product_list_api(request):
     paginator = Paginator(products, 9)
     page_obj = paginator.get_page(request.GET.get("page"))
 
-    html = render_to_string("products/_product_grid.html", {"page_obj": page_obj}, request=request)
+    html = render_to_string("products/_product_grid.html",
+                            {"page_obj": page_obj}, request=request)
     pagination = render_to_string("products/_pagination.html", {
         "page_obj": page_obj,
         "q": q,
@@ -88,9 +95,11 @@ def product_list_api(request):
     }, request=request)
     return JsonResponse({"html": html, "pagination": pagination})
 
+
 def product_detail(request, pk):
     product = get_object_or_404(Product, pk=pk, is_active=True)
     return render(request, "products/product_detail.html", {"product": product})
+
 
 @login_required
 @seller_required
@@ -108,11 +117,12 @@ def product_create(request):
         form = ProductForm()
     return render(request, "products/product_form.html", {"form": form, "mode": "create"})
 
+
 @login_required
 @seller_required
 def product_update(request, pk):
     product = get_object_or_404(Product, pk=pk) if request.user.is_superuser else \
-              get_object_or_404(Product, pk=pk, owner=request.user)
+        get_object_or_404(Product, pk=pk, owner=request.user)
     if request.method == "POST":
         form = ProductForm(request.POST, request.FILES, instance=product)
         if form.is_valid():
@@ -124,24 +134,22 @@ def product_update(request, pk):
         form = ProductForm(instance=product)
     return render(request, "products/product_form.html", {"form": form, "mode": "update", "product": product})
 
+
 @login_required
 @seller_required
 def product_delete(request, pk):
     product = get_object_or_404(Product, pk=pk) if request.user.is_superuser else \
-              get_object_or_404(Product, pk=pk, owner=request.user)
+        get_object_or_404(Product, pk=pk, owner=request.user)
     if request.method == "POST":
         product.delete()
         messages.success(request, "Product deleted.")
         return redirect("product_list")
     return redirect("product_detail", pk=pk)
 
-@login_required
+
+@staff_member_required
 def product_list_admin(request):
-    """Product list for admin/sellers showing additional information."""
-    if not (request.user.is_superuser or request.user.groups.filter(name="Seller").exists()):
-        from django.core.exceptions import PermissionDenied
-        raise PermissionDenied
-    
+    """Admin-only product list showing all products and extra info."""
     q = request.GET.get("q", "").strip()
     category_id = request.GET.get("category", "").strip()
     sort = request.GET.get("sort", "newest").strip()
@@ -149,12 +157,17 @@ def product_list_admin(request):
 
     products = Product.objects.all().select_related("category", "owner")
 
+    # Optional: allow mine filter for staff too (fine)
     if mine == "1":
         products = products.filter(owner=request.user)
 
     if q:
         products = products.filter(
-            Q(name__icontains=q) | Q(description__icontains=q) | Q(category__name__icontains=q)
+            Q(name__icontains=q)
+            | Q(description__icontains=q)
+            | Q(category__name__icontains=q)
+            | Q(owner__username__icontains=q)
+            | Q(owner__email__icontains=q)
         )
 
     if category_id:
@@ -171,11 +184,15 @@ def product_list_admin(request):
     paginator = Paginator(products, 15)
     page_obj = paginator.get_page(request.GET.get("page"))
 
-    return render(request, "products/product_list_admin.html", {
-        "categories": categories,
-        "page_obj": page_obj,
-        "q": q,
-        "category_id": category_id,
-        "sort": sort,
-        "mine": mine,
-    })
+    return render(
+        request,
+        "products/product_list_admin.html",
+        {
+            "categories": categories,
+            "page_obj": page_obj,
+            "q": q,
+            "category_id": category_id,
+            "sort": sort,
+            "mine": mine,
+        },
+    )

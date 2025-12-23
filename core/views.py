@@ -1,14 +1,14 @@
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
-from django.shortcuts import render, redirect
 from django.contrib import messages
-from products.models import Product  
-from django.contrib.admin.views.decorators import staff_member_required
-from products.models import Category
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect, render
+
+from core.utils import SELLER_GROUP_NAME, is_seller
+from products.models import Category, Product
 
 User = get_user_model()
+
 
 def home(request):
     latest = (
@@ -18,26 +18,43 @@ def home(request):
     )
     return render(request, "core/home.html", {"latest": latest})
 
+
 @staff_member_required
 def manage_sellers(request):
-    seller_group, _ = Group.objects.get_or_create(name="Seller")
+    seller_group, _ = Group.objects.get_or_create(name=SELLER_GROUP_NAME)
     users = User.objects.all().order_by("username")
+
     if request.method == "POST":
         uid = request.POST.get("user_id")
-        user = User.objects.get(pk=uid)
-        if user.groups.filter(name="Seller").exists():
+        user = get_object_or_404(User, pk=uid)
+
+        if user.groups.filter(id=seller_group.id).exists():
             user.groups.remove(seller_group)
             messages.success(request, f"Removed Seller role from {user.username}.")
         else:
             user.groups.add(seller_group)
             messages.success(request, f"Granted Seller role to {user.username}.")
+
         return redirect("manage_sellers")
-    return render(request, "core/manage_sellers.html", {"users": users, "seller_group": seller_group})
+
+    seller_ids = set(seller_group.user_set.values_list("id", flat=True))
+
+    return render(
+        request,
+        "core/manage_sellers.html",
+        {
+            "users": users,
+            "seller_group": seller_group,
+            "seller_ids": seller_ids,
+        },
+    )
+
 
 @staff_member_required
 def category_list(request):
     categories = Category.objects.all().order_by("name")
     return render(request, "core/category_list.html", {"categories": categories})
+
 
 @staff_member_required
 def category_create(request):
@@ -50,6 +67,7 @@ def category_create(request):
             return redirect("category_list")
         messages.error(request, "Name is required.")
     return render(request, "core/category_form.html", {"mode": "create"})
+
 
 @staff_member_required
 def category_update(request, pk):
@@ -64,5 +82,8 @@ def category_update(request, pk):
             messages.success(request, "Category updated.")
             return redirect("category_list")
         messages.error(request, "Name is required.")
-    return render(request, "core/category_form.html", {"mode": "update", "category": category})
-    
+    return render(
+        request,
+        "core/category_form.html",
+        {"mode": "update", "category": category},
+    )

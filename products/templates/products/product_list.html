@@ -2,16 +2,18 @@
 {% block title %}Products{% endblock %}
 
 {% block content %}
-<div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-3 mb-md-4 gap-2">
+<div
+  class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-3 mb-md-4 gap-2">
   <h1 class="m-0">Products</h1>
   {% if perms.products.add_product %}
-    <a class="btn btn-primary" href="{% url 'product_create' %}">+ Add Product</a>
+  <a class="btn btn-primary" href="{% url 'product_create' %}">+ Add Product</a>
   {% endif %}
 </div>
 
 {% if mine == "1" %}
 <div class="alert alert-info">
-  <strong>My Products:</strong> Showing only products you own. <a href="{% url 'product_list' %}" class="alert-link">View all products</a>
+  <strong>My Products:</strong> Showing only products you own. <a href="{% url 'product_list' %}"
+    class="alert-link">View all products</a>
 </div>
 {% endif %}
 
@@ -27,9 +29,11 @@
     <select class="form-select" name="category" id="category-select">
       <option value="">All Categories</option>
       {% for c in categories %}
-        <option value="{{ c.id }}" {% if category_id|stringformat:"s" == c.id|stringformat:"s" %}selected{% endif %}>
-          {{ c.name }}
-        </option>
+        {% with cid=c.id|stringformat:"s" %}
+          <option value="{{ c.id }}" {% if category_id|stringformat:"s" == cid %}selected{% endif %}>
+            {{ c.name }}
+          </option>
+        {% endwith %}
       {% endfor %}
     </select>
   </div>
@@ -51,60 +55,54 @@
 {% include "products/_pagination.html" %}
 
 <script>
-(function() {
-  const form = document.getElementById("filters-form");
-  const categorySelect = document.getElementById("category-select");
-  const sortSelect = document.getElementById("sort-select");
-  const searchInput = document.getElementById("search-input");
-  const clearBtn = document.getElementById("clear-filters");
+  (function () {
+    const form = document.getElementById("filters-form");
+    const categorySelect = document.getElementById("category-select");
+    const sortSelect = document.getElementById("sort-select");
+    const searchInput = document.getElementById("search-input");
+    const clearBtn = document.getElementById("clear-filters");
 
-  // Auto-submit when category or sort changes
-  if (categorySelect) {
-    categorySelect.addEventListener("change", function() {
-      form.submit();
-    });
-  }
-
-  if (sortSelect) {
-    sortSelect.addEventListener("change", function() {
-      form.submit();
-    });
-  }
-
-  // Submit search on Enter key
-  if (searchInput) {
-    searchInput.addEventListener("keypress", function(e) {
-      if (e.key === "Enter") {
-        e.preventDefault();
+    if (categorySelect) {
+      categorySelect.addEventListener("change", function () {
         form.submit();
-      }
-    });
-  }
+      });
+    }
 
-  // Clear filters button
-  if (clearBtn) {
-    clearBtn.addEventListener("click", function() {
-      // Reset form fields
-      if (searchInput) searchInput.value = "";
-      if (categorySelect) categorySelect.value = "";
-      if (sortSelect) sortSelect.value = "newest";
-      
-      // Build clean URL preserving mine parameter if present
-      const url = new URL(window.location.href);
-      url.searchParams.delete("q");
-      url.searchParams.delete("category");
-      url.searchParams.delete("sort");
-      url.searchParams.delete("page");
-      
-      // Preserve mine parameter if it exists
-      {% if mine == "1" %}
-      url.searchParams.set("mine", "1");
-      {% endif %}
-      
-      // Redirect to clean URL
-      window.location.href = url.toString();
-    });
-  }
-})();
+    if (sortSelect) {
+      sortSelect.addEventListener("change", function () {
+        form.submit();
+      });
+    }
+
+    if (searchInput) {
+      searchInput.addEventListener("keypress", function (e) {
+        if (e.key === "Enter") {
+          e.preventDefault();
+          form.submit();
+        }
+      });
+    }
+
+    if (clearBtn) {
+      clearBtn.addEventListener("click", function () {
+        if (searchInput) searchInput.value = "";
+        if (categorySelect) categorySelect.value = "";
+        if (sortSelect) sortSelect.value = "newest";
+
+        const url = new URL(window.location.href);
+        url.searchParams.delete("q");
+        url.searchParams.delete("category");
+        url.searchParams.delete("sort");
+        url.searchParams.delete("page");
+
+        const mineParam = "{{ mine|default:'' }}";
+        if (mineParam === "1") {
+          url.searchParams.set("mine", "1");
+        }
+
+        window.location.href = url.toString();
+      });
+    }
+  })();
 </script>
 {% endblock %}
