@@ -9,11 +9,11 @@
 
   <ul>
     {% for item in order.items.all %}
-      <li>{{ item.product.name }} x {{ item.quantity }} — {{ item.line_total }}</li>
+      <li>{{ item.product.name }} x {{ item.quantity }} — ${{ item.line_total }}</li>
     {% endfor %}
   </ul>
 
-  <p><b>Total:</b> {{ order.total }}</p>
+  <p><b>Total:</b> ${{ order.total }}</p>
 
   <a href="{% url 'product_list' %}">Back to products</a>
 {% endblock %}

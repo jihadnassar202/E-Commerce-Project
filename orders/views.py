@@ -49,20 +49,30 @@ def cart_add(request, product_id):
 
     if product.stock <= 0:
         messages.error(request, f"{product.name} is sold out.")
-        return redirect("product_detail", pk=product_id)
+        return redirect("product_list")
+
+    # Get quantity from form, default to 1
+    try:
+        qty_to_add = int(request.POST.get("quantity", "1"))
+    except ValueError:
+        qty_to_add = 1
+    
+    if qty_to_add <= 0:
+        qty_to_add = 1
 
     cart = _get_cart(request.session)
     pid = str(product.id)
     current_qty = int(cart.get(pid, 0))
+    new_qty = current_qty + qty_to_add
 
-    if current_qty >= product.stock:
+    if new_qty > product.stock:
         messages.error(request, f"Only {product.stock} left in stock.")
-        return redirect("cart_detail")
+        return redirect("product_list")
 
-    cart[pid] = current_qty + 1
+    cart[pid] = new_qty
     request.session.modified = True
     messages.success(request, f"Added {product.name} to cart.")
-    return redirect("cart_detail")
+    return redirect("product_list")
 
 
 def cart_update(request, product_id):
@@ -111,6 +121,54 @@ def cart_remove(request, product_id):
         request.session.modified = True
         messages.success(request, "Removed item from cart.")
 
+    return redirect("cart_detail")
+
+
+def cart_increment(request, product_id):
+    """Increment quantity by 1."""
+    if request.method != "POST":
+        return redirect("cart_detail")
+    
+    cart = _get_cart(request.session)
+    pid = str(product_id)
+    
+    if pid not in cart:
+        return redirect("cart_detail")
+    
+    product = get_object_or_404(Product, pk=product_id, is_active=True)
+    current_qty = int(cart.get(pid, 0))
+    new_qty = current_qty + 1
+    
+    if new_qty > product.stock:
+        messages.error(request, f"Only {product.stock} left in stock.")
+        return redirect("cart_detail")
+    
+    cart[pid] = new_qty
+    request.session.modified = True
+    return redirect("cart_detail")
+
+
+def cart_decrement(request, product_id):
+    """Decrement quantity by 1, remove if reaches 0."""
+    if request.method != "POST":
+        return redirect("cart_detail")
+    
+    cart = _get_cart(request.session)
+    pid = str(product_id)
+    
+    if pid not in cart:
+        return redirect("cart_detail")
+    
+    current_qty = int(cart.get(pid, 0))
+    new_qty = max(0, current_qty - 1)
+    
+    if new_qty == 0:
+        del cart[pid]
+        messages.success(request, "Item removed from cart.")
+    else:
+        cart[pid] = new_qty
+    
+    request.session.modified = True
     return redirect("cart_detail")
 
 

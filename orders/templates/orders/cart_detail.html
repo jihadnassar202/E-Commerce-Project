@@ -2,47 +2,75 @@
 {% block title %}Cart{% endblock %}
 
 {% block content %}
-<h1 class="mb-3">Cart</h1>
+<div class="card shadow-sm">
+  <div class="card-body">
+    <h2 class="fw-bold mb-4">Your Cart</h2>
 
-{% if items %}
-  <div class="card shadow-sm mb-3">
-    <ul class="list-group list-group-flush">
+    {% if items %}
+    <div class="mb-4">
       {% for it in items %}
-        <li class="list-group-item">
-          <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
-            <div>
-              <div class="fw-bold">{{ it.product.name }}</div>
-              <div class="text-muted small">Price: {{ it.product.price }} | Stock: {{ it.product.stock }}</div>
-              {% if it.product.stock == 0 %}
-                <div class="text-danger small">Sold out</div>
-              {% endif %}
+      <div
+        class="d-flex flex-column flex-md-row align-items-start align-items-md-center py-3 {% if not forloop.last %}border-bottom{% endif %} gap-3">
+        <!-- Product Image and Info -->
+        <div class="d-flex align-items-center flex-grow-1" style="min-width: 0;">
+          <div class="me-3 flex-shrink-0">
+            {% if it.product.image %}
+            <img src="{{ it.product.image.url }}" alt="{{ it.product.name }}" class="img-fluid"
+              style="width: 60px; height: 60px; object-fit: cover; border-radius: 8px;">
+            {% else %}
+            <div class="bg-light d-flex align-items-center justify-content-center"
+              style="width: 60px; height: 60px; border-radius: 8px;">
+              <span class="text-muted" style="font-size: 0.7rem;">No Image</span>
             </div>
-            <div class="d-flex align-items-center gap-2">
-              <form method="post" action="{% url 'cart_update' it.product.id %}" class="d-flex align-items-center gap-2">
-                {% csrf_token %}
-                <input class="form-control form-control-sm" style="width:90px" type="number" min="0" name="quantity" value="{{ it.quantity }}">
-                <button class="btn btn-sm btn-outline-secondary">Update</button>
-              </form>
-              <form method="post" action="{% url 'cart_remove' it.product.id %}">
-                {% csrf_token %}
-                <button class="btn btn-sm btn-danger">Remove</button>
-              </form>
-            </div>
-            <div class="fw-bold">{{ it.line_total }}</div>
+            {% endif %}
           </div>
-        </li>
-      {% endfor %}
-    </ul>
-  </div>
 
-  <div class="d-flex justify-content-between align-items-center">
-    <h4 class="m-0">Total: {{ total }}</h4>
-    <form method="post" action="{% url 'checkout' %}">
-      {% csrf_token %}
-      <button class="btn btn-primary">Checkout</button>
-    </form>
+          <!-- Product Info -->
+          <div class="flex-grow-1" style="min-width: 0;">
+            <div class="fw-bold mb-1 text-truncate">{{ it.product.name }}</div>
+            <div class="text-muted">${{ it.product.price }}</div>
+          </div>
+        </div>
+
+        <!-- Quantity Controls and Remove -->
+        <div class="d-flex align-items-center gap-2 flex-shrink-0">
+          <!-- Quantity Controls -->
+          <div class="d-flex align-items-center gap-2">
+            <form method="post" action="{% url 'cart_decrement' it.product.id %}" class="d-inline">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-outline-secondary btn-sm"
+                style="width: 35px; height: 35px;">-</button>
+            </form>
+            <span class="fw-bold" style="min-width: 30px; text-align: center;">{{ it.quantity }}</span>
+            <form method="post" action="{% url 'cart_increment' it.product.id %}" class="d-inline">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-outline-secondary btn-sm" style="width: 35px; height: 35px;" 
+              {% if it.quantity >= it.product.stock %}disabled{% endif %}>+</button>
+            </form>
+          </div>
+
+          <!-- Remove Button -->
+          <form method="post" action="{% url 'cart_remove' it.product.id %}" class="d-inline">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-danger btn-sm" style="width: 35px; height: 35px;">×</button>
+          </form>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Total and Checkout -->
+    <div
+      class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center pt-3 border-top gap-3">
+      <h4 class="fw-bold m-0">Total: ${{ total }}</h4>
+      <form method="post" action="{% url 'checkout' %}" class="w-100 w-md-auto">
+        {% csrf_token %}
+        <button class="btn btn-success w-100 w-md-auto px-4">Checkout</button>
+      </form>
+    </div>
+    {% else %}
+    <div class="alert alert-info">Cart is empty.</div>
+    {% endif %}
   </div>
-{% else %}
-  <div class="alert alert-info">Cart is empty.</div>
-{% endif %}
+</div>
 {% endblock %}

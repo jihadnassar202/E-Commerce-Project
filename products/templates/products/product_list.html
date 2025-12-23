@@ -2,7 +2,7 @@
 {% block title %}Products{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-3 mb-md-4 gap-2">
   <h1 class="m-0">Products</h1>
   {% if perms.products.add_product %}
     <a class="btn btn-primary" href="{% url 'product_create' %}">+ Add Product</a>
@@ -19,12 +19,12 @@
   {% if mine == "1" %}
   <input type="hidden" name="mine" value="1">
   {% endif %}
-  <div class="col-md-5">
-    <input class="form-control" type="text" name="q" placeholder="Search..." value="{{ q }}">
+  <div class="col-12 col-md-5">
+    <input class="form-control" type="text" name="q" id="search-input" placeholder="Search..." value="{{ q }}">
   </div>
 
-  <div class="col-md-3">
-    <select class="form-select" name="category">
+  <div class="col-12 col-md-3">
+    <select class="form-select" name="category" id="category-select">
       <option value="">All Categories</option>
       {% for c in categories %}
         <option value="{{ c.id }}" {% if category_id|stringformat:"s" == c.id|stringformat:"s" %}selected{% endif %}>
@@ -34,19 +34,16 @@
     </select>
   </div>
 
-  <div class="col-md-2">
-    <select class="form-select" name="sort">
+  <div class="col-12 col-md-2">
+    <select class="form-select" name="sort" id="sort-select">
       <option value="newest" {% if sort == "newest" %}selected{% endif %}>Newest</option>
       <option value="price_asc" {% if sort == "price_asc" %}selected{% endif %}>Price ↑</option>
       <option value="price_desc" {% if sort == "price_desc" %}selected{% endif %}>Price ↓</option>
     </select>
   </div>
 
-  <div class="col-md-2 d-grid">
-    <div class="d-flex gap-2">
-      <button class="btn btn-dark flex-fill" type="submit">Apply</button>
-      <button class="btn btn-secondary flex-fill" type="button" id="clear-filters">Clear</button>
-    </div>
+  <div class="col-12 col-md-2 d-grid">
+    <button class="btn btn-secondary" type="button" id="clear-filters">Clear</button>
   </div>
 </form>
 
@@ -55,50 +52,59 @@
 
 <script>
 (function() {
-  const form = document.querySelector("#filters-form") || document.querySelector("form");
-  const gridContainer = document.querySelector("#product-grid").parentElement;
-  const paginationContainer = document.querySelector(".pagination")?.parentElement || gridContainer;
+  const form = document.getElementById("filters-form");
+  const categorySelect = document.getElementById("category-select");
+  const sortSelect = document.getElementById("sort-select");
+  const searchInput = document.getElementById("search-input");
+  const clearBtn = document.getElementById("clear-filters");
 
-  function fetchProducts(page = null) {
-    const params = new URLSearchParams(new FormData(form));
-    if (page) params.set("page", page);
-    {% if mine == "1" %}
-    params.set("mine", "1");
-    {% endif %}
-    fetch("{% url 'product_list_api' %}?" + params.toString(), {
-      headers: { "X-Requested-With": "XMLHttpRequest" }
-    })
-    .then(r => r.json())
-    .then(data => {
-      gridContainer.innerHTML = data.html;
-      paginationContainer.innerHTML = data.pagination;
-      wirePagination();
+  // Auto-submit when category or sort changes
+  if (categorySelect) {
+    categorySelect.addEventListener("change", function() {
+      form.submit();
     });
   }
 
-  function wirePagination() {
-    document.querySelectorAll("[data-page]").forEach(link => {
-      link.addEventListener("click", (e) => {
+  if (sortSelect) {
+    sortSelect.addEventListener("change", function() {
+      form.submit();
+    });
+  }
+
+  // Submit search on Enter key
+  if (searchInput) {
+    searchInput.addEventListener("keypress", function(e) {
+      if (e.key === "Enter") {
         e.preventDefault();
-        fetchProducts(e.target.getAttribute("data-page"));
-      });
+        form.submit();
+      }
     });
   }
 
-  form.addEventListener("submit", (e) => {
-    e.preventDefault();
-    fetchProducts();
-  });
-
-  const clearBtn = document.querySelector("#clear-filters");
+  // Clear filters button
   if (clearBtn) {
-    clearBtn.addEventListener("click", () => {
-      form.reset();
-      fetchProducts();
+    clearBtn.addEventListener("click", function() {
+      // Reset form fields
+      if (searchInput) searchInput.value = "";
+      if (categorySelect) categorySelect.value = "";
+      if (sortSelect) sortSelect.value = "newest";
+      
+      // Build clean URL preserving mine parameter if present
+      const url = new URL(window.location.href);
+      url.searchParams.delete("q");
+      url.searchParams.delete("category");
+      url.searchParams.delete("sort");
+      url.searchParams.delete("page");
+      
+      // Preserve mine parameter if it exists
+      {% if mine == "1" %}
+      url.searchParams.set("mine", "1");
+      {% endif %}
+      
+      // Redirect to clean URL
+      window.location.href = url.toString();
     });
   }
-
-  wirePagination();
 })();
 </script>
 {% endblock %}

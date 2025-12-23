@@ -1,10 +1,14 @@
 {% if page_obj.paginator.num_pages > 1 %}
 <nav aria-label="Products pagination">
   <ul class="pagination">
+
     {% if page_obj.has_previous %}
-      <li class="page-item">
-        <a class="page-link" data-page="{{ page_obj.previous_page_number }}" href="#">Previous</a>
-      </li>
+    <li class="page-item">
+      <a class="page-link"
+         href="?{% if q %}q={{ q|urlencode }}&{% endif %}{% if category_id %}category={{ category_id }}&{% endif %}{% if sort %}sort={{ sort }}&{% endif %}{% if mine == '1' %}mine=1&{% endif %}page={{ page_obj.previous_page_number }}">
+        Previous
+      </a>
+    </li>
     {% else %}
       <li class="page-item disabled"><span class="page-link">Previous</span></li>
     {% endif %}
@@ -16,12 +20,16 @@
     </li>
 
     {% if page_obj.has_next %}
-      <li class="page-item">
-        <a class="page-link" data-page="{{ page_obj.next_page_number }}" href="#">Next</a>
-      </li>
+    <li class="page-item">
+      <a class="page-link"
+         href="?{% if q %}q={{ q|urlencode }}&{% endif %}{% if category_id %}category={{ category_id }}&{% endif %}{% if sort %}sort={{ sort }}&{% endif %}{% if mine == '1' %}mine=1&{% endif %}page={{ page_obj.next_page_number }}">
+        Next
+      </a>
+    </li>
     {% else %}
       <li class="page-item disabled"><span class="page-link">Next</span></li>
     {% endif %}
+
   </ul>
 </nav>
 {% endif %}

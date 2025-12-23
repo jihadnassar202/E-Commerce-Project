@@ -18,7 +18,6 @@ def product_list(request):
 
     products = Product.objects.filter(is_active=True).select_related("category")
 
-    # Filter by owner if mine=1 and user is seller/admin
     if mine == "1" and request.user.is_authenticated:
         if request.user.is_superuser or request.user.groups.filter(name="Seller").exists():
             products = products.filter(owner=request.user)
@@ -39,7 +38,7 @@ def product_list(request):
         products = products.order_by("-created_at")
 
     categories = Category.objects.filter(is_active=True).order_by("name")
-    paginator = Paginator(products, 9)
+    paginator = Paginator(products, 12)
     page_obj = paginator.get_page(request.GET.get("page"))
 
     return render(request, "products/product_list.html", {
@@ -59,7 +58,6 @@ def product_list_api(request):
 
     products = Product.objects.filter(is_active=True).select_related("category")
     
-    # Filter by owner if mine=1 and user is seller/admin
     if mine == "1" and request.user.is_authenticated:
         if request.user.is_superuser or request.user.groups.filter(name="Seller").exists():
             products = products.filter(owner=request.user)
@@ -135,7 +133,6 @@ def product_delete(request, pk):
         product.delete()
         messages.success(request, "Product deleted.")
         return redirect("product_list")
-    # Should not reach here - modal handles confirmation
     return redirect("product_detail", pk=pk)
 
 @login_required
@@ -150,10 +147,8 @@ def product_list_admin(request):
     sort = request.GET.get("sort", "newest").strip()
     mine = request.GET.get("mine", "").strip()
 
-    # Show all products (including inactive) for admin/sellers
     products = Product.objects.all().select_related("category", "owner")
 
-    # Filter by owner if mine=1
     if mine == "1":
         products = products.filter(owner=request.user)
 

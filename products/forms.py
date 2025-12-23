@@ -18,8 +18,12 @@ class ProductForm(forms.ModelForm):
         img = self.cleaned_data.get("image")
         if not img:
             return img
-        if img.size > 2 * 1024 * 1024:
-            raise forms.ValidationError("Image must be <= 2MB.")
-        if not img.content_type.startswith("image/"):
-            raise forms.ValidationError("File must be an image.")
+        
+        # Only validate new uploads (existing ImageFieldFile objects don't have content_type)
+        if hasattr(img, 'content_type'):
+            if img.size > 2 * 1024 * 1024:
+                raise forms.ValidationError("Image must be <= 2MB.")
+            if not img.content_type.startswith("image/"):
+                raise forms.ValidationError("File must be an image.")
+        
         return img
