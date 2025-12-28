@@ -27,11 +27,13 @@
 
     <p class="mt-3">{{ product.description }}</p>
 
-    <form method="post" action="{% url 'cart_add' product.id %}" class="mt-3">
+    <form method="post" action="{% url 'cart_add' product.id %}" class="mt-3 cart-add-form"
+      data-product-id="{{ product.id }}">
       {% csrf_token %}
-      <button type="submit" class="btn btn-success" {% if product.stock==0 %}disabled{% endif %}>
+      <button type="submit" class="btn btn-success" {% if product.stock == 0 %}disabled{% endif %}>
         {% if product.stock == 0 %}Sold out{% else %}Add to cart{% endif %}
       </button>
+      <span class="cart-add-message ms-2"></span>
     </form>
 
     <a href="{% url 'cart_detail' %}" class="btn btn-outline-secondary mt-2">
@@ -81,4 +83,89 @@
   </div>
 </div>
 {% endif %}
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const form = document.querySelector('.cart-add-form');
+    if (form) {
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        const button = form.querySelector('button[type="submit"]');
+        const messageSpan = form.querySelector('.cart-add-message');
+        const originalText = button.textContent;
+
+        // Disable button and show loading
+        button.disabled = true;
+        button.textContent = 'Adding...';
+        messageSpan.textContent = '';
+        messageSpan.className = 'cart-add-message ms-2';
+
+        const formData = new FormData(form);
+        const url = form.getAttribute('action');
+
+        fetch(url, {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+          }
+        })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              button.textContent = 'Added!';
+              messageSpan.textContent = data.message;
+              messageSpan.className = 'cart-add-message ms-2 text-success';
+
+              // Update cart count in navbar
+              updateCartCount(data.cart_count);
+
+              // Reset button after 2 seconds
+              setTimeout(() => {
+                button.textContent = originalText;
+                messageSpan.textContent = '';
+                messageSpan.className = 'cart-add-message ms-2';
+              }, 2000);
+            } else {
+              button.textContent = originalText;
+              messageSpan.textContent = data.message;
+              messageSpan.className = 'cart-add-message ms-2 text-danger';
+            }
+            button.disabled = false;
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            button.textContent = originalText;
+            button.disabled = false;
+            messageSpan.textContent = 'An error occurred. Please try again.';
+            messageSpan.className = 'cart-add-message ms-2 text-danger';
+          });
+      });
+    }
+
+    function updateCartCount(count) {
+      const cartBadge = document.querySelector('.badge.bg-danger');
+      const cartLink = document.querySelector('a[href*="cart"]');
+
+      if (count > 0) {
+        if (cartBadge) {
+          cartBadge.textContent = count;
+          cartBadge.style.display = '';
+        } else if (cartLink) {
+          // Create badge if it doesn't exist
+          const badge = document.createElement('span');
+          badge.className = 'position-absolute top-0 start-100 translate-middle badge rounded-circle bg-danger';
+          badge.style.cssText = 'font-size: 0.7em; min-width: 1.2em; height: 1.2em; padding: 0.15em 0.3em; line-height: 1; margin-left: -0.5rem;';
+          badge.textContent = count;
+          cartLink.appendChild(badge);
+        }
+      } else {
+        if (cartBadge) {
+          cartBadge.style.display = 'none';
+        }
+      }
+    }
+  });
+</script>
 {% endblock %}

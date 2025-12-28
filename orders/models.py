@@ -1,6 +1,10 @@
+from decimal import Decimal, ROUND_HALF_UP
 from django.conf import settings
 from django.db import models
 from products.models import Product
+
+# Currency precision: 2 decimal places
+CURRENCY_PRECISION = Decimal("0.01")
 
 
 class Order(models.Model):
@@ -39,5 +43,7 @@ class OrderItem(models.Model):
 
     @property
     def line_total(self):
-        return self.price_at_purchase * self.quantity
+        """Calculate line total with proper currency precision."""
+        total = self.price_at_purchase * self.quantity
+        return total.quantize(CURRENCY_PRECISION, rounding=ROUND_HALF_UP)
 

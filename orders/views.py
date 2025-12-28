@@ -1,4 +1,4 @@
-from decimal import Decimal
+from decimal import Decimal, ROUND_HALF_UP
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -10,6 +10,16 @@ from django.views.decorators.http import require_POST
 
 from products.models import Product
 from .models import Order, OrderItem
+
+# Currency precision: 2 decimal places
+CURRENCY_PRECISION = Decimal("0.01")
+
+
+def _quantize_currency(value):
+    """Round Decimal value to 2 decimal places for currency."""
+    if not isinstance(value, Decimal):
+        value = Decimal(str(value))
+    return value.quantize(CURRENCY_PRECISION, rounding=ROUND_HALF_UP)
 
 
 def _get_cart(session):
@@ -131,9 +141,10 @@ def _calculate_cart_total(cart):
             continue
 
         if pid in product_map and qty > 0:
-            total += product_map[pid] * qty
+            line_total = _quantize_currency(product_map[pid] * qty)
+            total += line_total
 
-    return total
+    return _quantize_currency(total)
 
 
 def cart_detail(request):
@@ -157,12 +168,12 @@ def cart_detail(request):
     for p in products:
         qty = int(cleaned_cart.get(str(p.id), 0))
         if qty > 0:  # Double-check quantity is valid
-            line_total = p.price * qty
+            line_total = _quantize_currency(p.price * qty)
             items.append({"product": p, "quantity": qty,
                          "line_total": line_total})
             total += line_total
 
-    return render(request, "orders/cart_detail.html", {"items": items, "total": total})
+    return render(request, "orders/cart_detail.html", {"items": items, "total": _quantize_currency(total)})
 
 
 @require_POST
@@ -343,7 +354,7 @@ def cart_increment(request, product_id):
     request.session.modified = True
 
     # Calculate updated totals
-    line_total = product.price * new_qty
+    line_total = _quantize_currency(product.price * new_qty)
     cart_total = _calculate_cart_total(cart)
 
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -404,7 +415,7 @@ def cart_decrement(request, product_id):
                 'cart_count': _get_cart_count(request.session)
             })
         else:
-            line_total = product.price * new_qty
+            line_total = _quantize_currency(product.price * new_qty)
             return JsonResponse({
                 'success': True,
                 'removed': False,
@@ -441,10 +452,12 @@ def checkout(request):
     for p in products:
         qty = int(cleaned_cart.get(str(p.id), 0))
         if qty > 0:  # Only include valid quantities
-            line_total = p.price * qty
+            line_total = _quantize_currency(p.price * qty)
             items.append({"product": p, "quantity": qty,
                          "line_total": line_total})
             total += line_total
+
+    total = _quantize_currency(total)
 
     if request.method == "POST":
         errors = []
@@ -507,17 +520,18 @@ def checkout(request):
                     qty = int(qty_str)
                     product = locked_map[pid]
 
+                    line_total = _quantize_currency(product.price * qty)
                     OrderItem.objects.create(
                         order=order,
                         product=product,
                         quantity=qty,
                         price_at_purchase=product.price,
                     )
-                    running_total += product.price * qty
+                    running_total += line_total
                     product.stock -= qty
                     product.save(update_fields=["stock"])
 
-                order.total_amount = running_total
+                order.total_amount = _quantize_currency(running_total)
                 order.status = Order.STATUS_PAID  # mock payment success
                 order.is_paid = True
                 order.save(update_fields=["total_amount", "status", "is_paid"])

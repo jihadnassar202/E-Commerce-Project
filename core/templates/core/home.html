@@ -33,7 +33,7 @@
         <div class="card-body d-flex flex-column">
           <h5 class="card-title">{{ p.name }}</h5>
           <p class="fw-bold mb-3">${{ p.price }}</p>
-          <form method="post" action="{% url 'cart_add' p.id %}" class="mt-auto">
+          <form method="post" action="{% url 'cart_add' p.id %}" class="mt-auto cart-add-form" data-product-id="{{ p.id }}">
             {% csrf_token %}
             <div class="d-flex gap-2 align-items-center">
               <input type="number" name="quantity" value="1" min="1" max="{{ p.stock }}" class="form-control form-control-sm" style="width: 80px;" {% if p.stock == 0 %}disabled{% endif %}>
@@ -41,6 +41,7 @@
                 {% if p.stock == 0 %}Sold Out{% else %}Add{% endif %}
               </button>
             </div>
+            <span class="cart-add-message" style="font-size: 0.75rem; display: block; margin-top: 0.25rem;"></span>
           </form>
         </div>
       </div>
@@ -53,4 +54,86 @@
     </div>
   {% endfor %}
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const forms = document.querySelectorAll('.cart-add-form');
+  
+  forms.forEach(function(form) {
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      const button = form.querySelector('button[type="submit"]');
+      const messageSpan = form.querySelector('.cart-add-message');
+      const originalText = button.textContent.trim();
+
+      // Disable button and show loading
+      button.disabled = true;
+      button.textContent = 'Adding...';
+      messageSpan.textContent = '';
+      messageSpan.className = 'cart-add-message';
+
+      const formData = new FormData(form);
+      const url = form.getAttribute('action');
+
+      fetch(url, {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            button.textContent = 'Added';
+            button.classList.remove('btn-success');
+            button.classList.add('btn-secondary');
+            button.disabled = false;
+            messageSpan.textContent = data.message;
+            messageSpan.className = 'cart-add-message text-success';
+
+            // Update cart count in navbar
+            updateCartCount(data.cart_count);
+          } else {
+            button.textContent = originalText;
+            messageSpan.textContent = data.message;
+            messageSpan.className = 'cart-add-message text-danger';
+            button.disabled = false;
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          button.textContent = originalText;
+          button.disabled = false;
+          messageSpan.textContent = 'An error occurred. Please try again.';
+          messageSpan.className = 'cart-add-message text-danger';
+        });
+    });
+  });
+
+  function updateCartCount(count) {
+    const cartBadge = document.querySelector('.badge.bg-danger');
+    const cartLink = document.querySelector('a[href*="cart"]');
+
+    if (count > 0) {
+      if (cartBadge) {
+        cartBadge.textContent = count;
+        cartBadge.style.display = '';
+      } else if (cartLink) {
+        // Create badge if it doesn't exist
+        const badge = document.createElement('span');
+        badge.className = 'position-absolute top-0 start-100 translate-middle badge rounded-circle bg-danger';
+        badge.style.cssText = 'font-size: 0.7em; min-width: 1.2em; height: 1.2em; padding: 0.15em 0.3em; line-height: 1; margin-left: -0.5rem;';
+        badge.textContent = count;
+        cartLink.appendChild(badge);
+      }
+    } else {
+      if (cartBadge) {
+        cartBadge.style.display = 'none';
+      }
+    }
+  }
+});
+</script>
 {% endblock %}
