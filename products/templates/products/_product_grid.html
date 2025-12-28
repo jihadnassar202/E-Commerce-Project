@@ -24,7 +24,8 @@
 
           <p class="fw-bold mb-3">${{ p.price }}</p>
 
-          <form method="post" action="{% url 'cart_add' p.id %}" class="mt-auto">
+          <form method="post" action="{% url 'cart_add' p.id %}" class="mt-auto cart-add-form"
+                data-product-id="{{ p.id }}">
             {% csrf_token %}
             <div class="d-flex gap-2 align-items-center">
               <input type="number" name="quantity" value="1" min="1" max="{{ p.stock }}"
@@ -35,6 +36,7 @@
                 {% if p.stock == 0 %}Sold Out{% else %}Add{% endif %}
               </button>
             </div>
+            <span class="cart-add-message" style="font-size: 0.75rem; display: block; margin-top: 0.25rem;"></span>
           </form>
 
         </div>

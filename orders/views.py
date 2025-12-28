@@ -25,10 +25,82 @@ def _get_cart(session):
     return cart
 
 
+def _validate_and_clean_cart(session):
+    """
+    Validate and clean cart to remove invalid states:
+    - Remove items with negative or zero quantities
+    - Remove items for products that don't exist or are inactive
+    - Adjust quantities that exceed available stock
+    Returns: (cleaned_cart, removed_items)
+    """
+    cart = _get_cart(session)
+    if not cart:
+        return cart, []
+
+    # Get all product IDs from cart
+    cart_ids = [int(pid) for pid in cart.keys() if pid.isdigit()]
+    if not cart_ids:
+        session["cart"] = {}
+        return {}, []
+
+    # Fetch all products in one query
+    products = Product.objects.filter(
+        id__in=cart_ids, is_active=True).only('id', 'stock')
+    product_map = {p.id: p for p in products}
+
+    cleaned_cart = {}
+    removed_items = []
+
+    for pid_str, qty_str in cart.items():
+        try:
+            pid = int(pid_str)
+            qty = int(qty_str)
+        except (ValueError, TypeError):
+            # Invalid product ID or quantity format
+            removed_items.append(pid_str)
+            continue
+
+        # Skip if product doesn't exist or is inactive
+        if pid not in product_map:
+            removed_items.append(pid_str)
+            continue
+
+        product = product_map[pid]
+
+        # Remove items with invalid quantities
+        if qty <= 0:
+            removed_items.append(pid_str)
+            continue
+
+        # Adjust quantity if it exceeds stock
+        if qty > product.stock:
+            if product.stock > 0:
+                cleaned_cart[pid_str] = product.stock
+            else:
+                removed_items.append(pid_str)
+        else:
+            cleaned_cart[pid_str] = qty
+
+    # Update session if cart was modified
+    if len(cleaned_cart) != len(cart) or any(pid_str not in cleaned_cart for pid_str in cart.keys()):
+        session["cart"] = cleaned_cart
+        session.modified = True
+
+    return cleaned_cart, removed_items
+
+
 def _get_cart_count(session):
     """Get total number of items in cart."""
     cart = _get_cart(session)
-    return sum(int(qty) for qty in cart.values() if qty > 0)
+    count = 0
+    for qty_str in cart.values():
+        try:
+            qty = int(qty_str)
+            if qty > 0:
+                count += qty
+        except (ValueError, TypeError):
+            continue
+    return count
 
 
 def _calculate_cart_total(cart):
@@ -36,24 +108,46 @@ def _calculate_cart_total(cart):
     if not cart:
         return Decimal("0.00")
 
-    ids = [int(pid) for pid in cart.keys()]
+    ids = []
+    for pid_str in cart.keys():
+        try:
+            ids.append(int(pid_str))
+        except (ValueError, TypeError):
+            continue
+
+    if not ids:
+        return Decimal("0.00")
+
     products = Product.objects.filter(
         id__in=ids, is_active=True).only('id', 'price')
     product_map = {p.id: p.price for p in products}
 
     total = Decimal("0.00")
-    for pid_str, qty in cart.items():
-        pid = int(pid_str)
-        if pid in product_map:
-            total += product_map[pid] * int(qty)
+    for pid_str, qty_str in cart.items():
+        try:
+            pid = int(pid_str)
+            qty = max(0, int(qty_str))  # Ensure non-negative
+        except (ValueError, TypeError):
+            continue
+
+        if pid in product_map and qty > 0:
+            total += product_map[pid] * qty
 
     return total
 
 
 def cart_detail(request):
-    cart = _get_cart(request.session)
+    # Validate and clean cart to remove invalid states
+    cleaned_cart, removed_items = _validate_and_clean_cart(request.session)
 
-    ids = [int(pid) for pid in cart.keys()] if cart else []
+    # Show message if items were removed
+    if removed_items:
+        messages.warning(
+            request,
+            f"Some items were removed from your cart due to invalid quantities or unavailable products."
+        )
+
+    ids = [int(pid) for pid in cleaned_cart.keys()] if cleaned_cart else []
     products = Product.objects.filter(
         id__in=ids, is_active=True).select_related("category")
 
@@ -61,10 +155,12 @@ def cart_detail(request):
     total = Decimal("0.00")
 
     for p in products:
-        qty = int(cart.get(str(p.id), 0))
-        line_total = p.price * qty
-        items.append({"product": p, "quantity": qty, "line_total": line_total})
-        total += line_total
+        qty = int(cleaned_cart.get(str(p.id), 0))
+        if qty > 0:  # Double-check quantity is valid
+            line_total = p.price * qty
+            items.append({"product": p, "quantity": qty,
+                         "line_total": line_total})
+            total += line_total
 
     return render(request, "orders/cart_detail.html", {"items": items, "total": total})
 
@@ -93,8 +189,24 @@ def cart_add(request, product_id):
 
     cart = _get_cart(request.session)
     pid = str(product.id)
-    current_qty = int(cart.get(pid, 0))
+
+    # Validate current quantity in cart
+    try:
+        current_qty = max(0, int(cart.get(pid, 0)))
+    except (ValueError, TypeError):
+        current_qty = 0
+
     new_qty = current_qty + qty_to_add
+
+    # Validate new quantity
+    if new_qty <= 0:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': False,
+                'message': 'Quantity must be greater than zero.'
+            }, status=400)
+        messages.error(request, 'Quantity must be greater than zero.')
+        return redirect("product_list")
 
     if new_qty > product.stock:
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -132,9 +244,10 @@ def cart_update(request, product_id):
 
     try:
         qty = int(request.POST.get("quantity", "1"))
-    except ValueError:
+    except (ValueError, TypeError):
         qty = 1
 
+    # Validate quantity
     if qty <= 0:
         del cart[pid]
         request.session.modified = True
@@ -142,9 +255,18 @@ def cart_update(request, product_id):
         return redirect("cart_detail")
 
     product = get_object_or_404(Product, pk=product_id, is_active=True)
+
+    # Validate quantity doesn't exceed stock
     if qty > product.stock:
-        messages.error(request, f"Only {product.stock} left in stock.")
-        qty = product.stock
+        if product.stock <= 0:
+            del cart[pid]
+            request.session.modified = True
+            messages.error(
+                request, f"{product.name} is sold out and has been removed from your cart.")
+        else:
+            messages.error(
+                request, f"Only {product.stock} left in stock for {product.name}. Quantity adjusted.")
+            qty = product.stock
 
     cart[pid] = qty
     request.session.modified = True
@@ -197,7 +319,13 @@ def cart_increment(request, product_id):
         return redirect("cart_detail")
 
     product = get_object_or_404(Product, pk=product_id, is_active=True)
-    current_qty = int(cart.get(pid, 0))
+
+    # Validate current quantity
+    try:
+        current_qty = max(0, int(cart.get(pid, 0)))
+    except (ValueError, TypeError):
+        current_qty = 0
+
     new_qty = current_qty + 1
 
     if new_qty > product.stock:
@@ -246,7 +374,13 @@ def cart_decrement(request, product_id):
         return redirect("cart_detail")
 
     product = get_object_or_404(Product, pk=product_id, is_active=True)
-    current_qty = int(cart.get(pid, 0))
+
+    # Validate current quantity
+    try:
+        current_qty = max(0, int(cart.get(pid, 0)))
+    except (ValueError, TypeError):
+        current_qty = 0
+
     new_qty = max(0, current_qty - 1)
 
     if new_qty == 0:
@@ -287,43 +421,79 @@ def cart_decrement(request, product_id):
 
 @login_required
 def checkout(request):
-    cart = _get_cart(request.session)
+    # Validate and clean cart before checkout
+    cleaned_cart, removed_items = _validate_and_clean_cart(request.session)
 
-    if not cart:
-        messages.error(request, "Your cart is empty.")
+    if not cleaned_cart:
+        if removed_items:
+            messages.warning(
+                request, "Your cart was cleared due to invalid items.")
+        else:
+            messages.error(request, "Your cart is empty.")
         return redirect("product_list")
 
-    ids = [int(pid) for pid in cart.keys()]
+    ids = [int(pid) for pid in cleaned_cart.keys()]
     products = list(Product.objects.filter(id__in=ids, is_active=True))
 
     # Build items for display regardless of method
     items = []
     total = Decimal("0.00")
     for p in products:
-        qty = int(cart.get(str(p.id), 0))
-        line_total = p.price * qty
-        items.append({"product": p, "quantity": qty, "line_total": line_total})
-        total += line_total
+        qty = int(cleaned_cart.get(str(p.id), 0))
+        if qty > 0:  # Only include valid quantities
+            line_total = p.price * qty
+            items.append({"product": p, "quantity": qty,
+                         "line_total": line_total})
+            total += line_total
 
     if request.method == "POST":
+        errors = []
+
         try:
             with transaction.atomic():
+                # Lock products for update to prevent race conditions
                 locked_products = (
                     Product.objects.select_for_update()
                     .filter(id__in=ids, is_active=True)
                 )
                 locked_map = {p.id: p for p in locked_products}
 
-                for pid_str, qty in cart.items():
-                    pid = int(pid_str)
-                    product = locked_map.get(pid)
-                    if not product or product.stock < qty or product.stock <= 0:
-                        messages.error(
-                            request,
-                            f"Insufficient stock for {product.name if product else 'item'}."
-                        )
-                        return redirect("cart_detail")
+                # Validate all products before processing
+                for pid_str, qty_str in cleaned_cart.items():
+                    try:
+                        pid = int(pid_str)
+                        qty = int(qty_str)
+                    except (ValueError, TypeError):
+                        errors.append(
+                            f"Invalid quantity for product ID {pid_str}.")
+                        continue
 
+                    if qty <= 0:
+                        errors.append(
+                            f"Invalid quantity (must be greater than zero) for product ID {pid_str}.")
+                        continue
+
+                    product = locked_map.get(pid)
+
+                    if not product:
+                        errors.append(
+                            f"Product ID {pid_str} is no longer available.")
+                        continue
+
+                    if product.stock <= 0:
+                        errors.append(f"{product.name} is sold out.")
+                    elif product.stock < qty:
+                        errors.append(
+                            f"{product.name}: Only {product.stock} available, but {qty} requested."
+                        )
+
+                # If there are any errors, show them all and abort
+                if errors:
+                    for error in errors:
+                        messages.error(request, error)
+                    return redirect("cart_detail")
+
+                # All validations passed, create order
                 order = Order.objects.create(
                     user=request.user,
                     status=Order.STATUS_PENDING,
@@ -332,9 +502,11 @@ def checkout(request):
                 )
 
                 running_total = Decimal("0.00")
-                for pid_str, qty in cart.items():
+                for pid_str, qty_str in cleaned_cart.items():
                     pid = int(pid_str)
+                    qty = int(qty_str)
                     product = locked_map[pid]
+
                     OrderItem.objects.create(
                         order=order,
                         product=product,
@@ -353,11 +525,23 @@ def checkout(request):
                 request.session["cart"] = {}
                 request.session.modified = True
 
-                messages.success(request, f"Order #{order.pk} created ✅")
+                messages.success(
+                    request, f"Order #{order.pk} created successfully!")
                 return redirect("order_success", order_id=order.pk)
-        except Exception:
+
+        except ValueError as e:
+            messages.error(request, f"Invalid data in cart: {str(e)}")
+            return redirect("cart_detail")
+        except Exception as e:
+            # Log the actual error for debugging
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Checkout error: {str(e)}", exc_info=True)
+
             messages.error(
-                request, "Could not complete checkout. Please try again.")
+                request,
+                f"An error occurred during checkout. Please try again. If the problem persists, contact support."
+            )
             return redirect("cart_detail")
 
     return render(request, "orders/checkout.html", {"items": items, "total": total})
