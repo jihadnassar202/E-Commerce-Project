@@ -7,10 +7,10 @@
     <h2 class="fw-bold mb-4">Your Cart</h2>
 
     {% if items %}
-    <div class="mb-4">
+    <div class="mb-4" id="cart-items">
       {% for it in items %}
-      <div
-        class="d-flex flex-column flex-md-row align-items-start align-items-md-center py-3 {% if not forloop.last %}border-bottom{% endif %} gap-3">
+      <div class="cart-item d-flex flex-column flex-md-row align-items-start align-items-md-center py-3 {% if not forloop.last %}border-bottom{% endif %} gap-3"
+        data-product-id="{{ it.product.id }}" data-product-price="{{ it.product.price }}" data-max-quantity="{{ it.product.stock }}">
         <!-- Product Image and Info -->
         <div class="d-flex align-items-center flex-grow-1" style="min-width: 0;">
           <div class="me-3 flex-shrink-0">
@@ -28,7 +28,7 @@
           <!-- Product Info -->
           <div class="flex-grow-1" style="min-width: 0;">
             <div class="fw-bold mb-1 text-truncate">{{ it.product.name }}</div>
-            <div class="text-muted">${{ it.product.price }}</div>
+            <div class="text-muted">$<span class="item-price">{{ it.product.price }}</span></div>
           </div>
         </div>
 
@@ -36,24 +36,19 @@
         <div class="d-flex align-items-center gap-2 flex-shrink-0">
           <!-- Quantity Controls -->
           <div class="d-flex align-items-center gap-2">
-            <form method="post" action="{% url 'cart_decrement' it.product.id %}" class="d-inline">
-              {% csrf_token %}
-              <button type="submit" class="btn btn-outline-secondary btn-sm"
-                style="width: 35px; height: 35px;">-</button>
-            </form>
-            <span class="fw-bold" style="min-width: 30px; text-align: center;">{{ it.quantity }}</span>
-            <form method="post" action="{% url 'cart_increment' it.product.id %}" class="d-inline">
-              {% csrf_token %}
-              <button type="submit" class="btn btn-outline-secondary btn-sm" style="width: 35px; height: 35px;" 
+            <button type="button" class="btn btn-outline-secondary btn-sm cart-decrement-btn"
+              style="width: 35px; height: 35px;" data-product-id="{{ it.product.id }}">-</button>
+            <span class="fw-bold item-quantity" style="min-width: 30px; text-align: center;">{{ it.quantity }}</span>
+            <button type="button" class="btn btn-outline-secondary btn-sm cart-increment-btn" 
+              style="width: 35px; height: 35px;" 
+              data-product-id="{{ it.product.id }}"
               {% if it.quantity >= it.product.stock %}disabled{% endif %}>+</button>
-            </form>
           </div>
 
           <!-- Remove Button -->
-          <form method="post" action="{% url 'cart_remove' it.product.id %}" class="d-inline">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-danger btn-sm" style="width: 35px; height: 35px;">×</button>
-          </form>
+          <button type="button" class="btn btn-danger btn-sm cart-remove-btn" 
+            style="width: 35px; height: 35px;" 
+            data-product-id="{{ it.product.id }}">×</button>
         </div>
       </div>
       {% endfor %}
@@ -62,7 +57,7 @@
     <!-- Total and Checkout -->
     <div
       class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center pt-3 border-top gap-3">
-      <h4 class="fw-bold m-0">Total: ${{ total }}</h4>
+      <h4 class="fw-bold m-0">Total: $<span id="cart-total">{{ total }}</span></h4>
       <form method="post" action="{% url 'checkout' %}" class="w-100 w-md-auto">
         {% csrf_token %}
         <button class="btn btn-success w-100 w-md-auto px-4">Checkout</button>
@@ -73,4 +68,200 @@
     {% endif %}
   </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  // Helper function to get CSRF token
+  function getCSRFToken() {
+    const tokenInput = document.querySelector('[name=csrfmiddlewaretoken]');
+    return tokenInput ? tokenInput.value : '';
+  }
+  
+  // Helper function to update cart count in navbar
+  function updateCartCount(count) {
+    const cartBadge = document.querySelector('.badge.bg-danger');
+    const cartLink = document.querySelector('a[href*="cart"]');
+    
+    if (count > 0) {
+      if (cartBadge) {
+        cartBadge.textContent = count;
+        cartBadge.style.display = '';
+      } else if (cartLink) {
+        const badge = document.createElement('span');
+        badge.className = 'position-absolute top-0 start-100 translate-middle badge rounded-circle bg-danger';
+        badge.style.cssText = 'font-size: 0.7em; min-width: 1.2em; height: 1.2em; padding: 0.15em 0.3em; line-height: 1; margin-left: -0.5rem;';
+        badge.textContent = count;
+        cartLink.appendChild(badge);
+      }
+    } else {
+      if (cartBadge) {
+        cartBadge.style.display = 'none';
+      }
+    }
+  }
+  
+  // Helper function to remove cart item from DOM
+  function removeCartItem(productId) {
+    const item = document.querySelector(`.cart-item[data-product-id="${productId}"]`);
+    if (item) {
+      item.style.transition = 'opacity 0.3s';
+      item.style.opacity = '0';
+      setTimeout(() => {
+        item.remove();
+        // Check if cart is empty
+        const cartItems = document.getElementById('cart-items');
+        if (cartItems && cartItems.children.length === 0) {
+          location.reload(); // Reload to show empty cart message
+        }
+      }, 300);
+    }
+  }
+  
+  // Increment quantity
+  document.querySelectorAll('.cart-increment-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const productId = this.getAttribute('data-product-id');
+      const item = this.closest('.cart-item');
+      const quantitySpan = item.querySelector('.item-quantity');
+      const incrementBtn = item.querySelector('.cart-increment-btn');
+      const decrementBtn = item.querySelector('.cart-decrement-btn');
+      
+      // Disable buttons during request
+      incrementBtn.disabled = true;
+      decrementBtn.disabled = true;
+      
+      const formData = new FormData();
+      formData.append('csrfmiddlewaretoken', getCSRFToken());
+      
+      fetch(`/cart/increment/${productId}/`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          quantitySpan.textContent = data.quantity;
+          document.getElementById('cart-total').textContent = data.cart_total;
+          updateCartCount(data.cart_count);
+          
+          // Update increment button disabled state
+          if (data.quantity >= data.max_quantity) {
+            incrementBtn.disabled = true;
+          } else {
+            incrementBtn.disabled = false;
+          }
+        } else {
+          alert(data.message);
+        }
+        decrementBtn.disabled = false;
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred. Please try again.');
+        incrementBtn.disabled = false;
+        decrementBtn.disabled = false;
+      });
+    });
+  });
+  
+  // Decrement quantity
+  document.querySelectorAll('.cart-decrement-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      const productId = this.getAttribute('data-product-id');
+      const item = this.closest('.cart-item');
+      const quantitySpan = item.querySelector('.item-quantity');
+      const incrementBtn = item.querySelector('.cart-increment-btn');
+      const decrementBtn = item.querySelector('.cart-decrement-btn');
+      
+      // Disable buttons during request
+      incrementBtn.disabled = true;
+      decrementBtn.disabled = true;
+      
+      const formData = new FormData();
+      formData.append('csrfmiddlewaretoken', getCSRFToken());
+      
+      fetch(`/cart/decrement/${productId}/`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          if (data.removed) {
+            removeCartItem(productId);
+            document.getElementById('cart-total').textContent = data.cart_total;
+            updateCartCount(data.cart_count);
+          } else {
+            quantitySpan.textContent = data.quantity;
+            document.getElementById('cart-total').textContent = data.cart_total;
+            updateCartCount(data.cart_count);
+            
+            // Enable increment button
+            incrementBtn.disabled = false;
+            decrementBtn.disabled = false;
+          }
+        } else {
+          alert(data.message);
+          incrementBtn.disabled = false;
+          decrementBtn.disabled = false;
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred. Please try again.');
+        incrementBtn.disabled = false;
+        decrementBtn.disabled = false;
+      });
+    });
+  });
+  
+  // Remove item
+  document.querySelectorAll('.cart-remove-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      if (!confirm('Are you sure you want to remove this item from your cart?')) {
+        return;
+      }
+      
+      const productId = this.getAttribute('data-product-id');
+      const item = this.closest('.cart-item');
+      const removeBtn = this;
+      
+      removeBtn.disabled = true;
+      
+      const formData = new FormData();
+      formData.append('csrfmiddlewaretoken', getCSRFToken());
+      
+      fetch(`/cart/remove/${productId}/`, {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          removeCartItem(productId);
+          document.getElementById('cart-total').textContent = data.cart_total;
+          updateCartCount(data.cart_count);
+        } else {
+          alert(data.message);
+          removeBtn.disabled = false;
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred. Please try again.');
+        removeBtn.disabled = false;
+      });
+    });
+  });
+});
+</script>
 {% endblock %}

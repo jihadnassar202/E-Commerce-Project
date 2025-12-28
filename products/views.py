@@ -7,6 +7,7 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.contrib.admin.views.decorators import staff_member_required
+from django.views.decorators.http import require_POST
 from core.utils import is_seller
 from .decorators import seller_required
 from .forms import ProductForm
@@ -137,14 +138,13 @@ def product_update(request, pk):
 
 @login_required
 @seller_required
+@require_POST
 def product_delete(request, pk):
     product = get_object_or_404(Product, pk=pk) if request.user.is_superuser else \
         get_object_or_404(Product, pk=pk, owner=request.user)
-    if request.method == "POST":
-        product.delete()
-        messages.success(request, "Product deleted.")
-        return redirect("product_list")
-    return redirect("product_detail", pk=pk)
+    product.delete()
+    messages.success(request, "Product deleted.")
+    return redirect("product_list")
 
 
 @staff_member_required
