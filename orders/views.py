@@ -8,6 +8,7 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 
+from core.utils import is_seller
 from products.models import Product
 from .models import Order, OrderItem
 
@@ -180,6 +181,17 @@ def cart_detail(request):
 def cart_add(request, product_id):
     product = get_object_or_404(Product, pk=product_id, is_active=True)
 
+    # Server-side ownership validation: prevent sellers from purchasing their own products
+    if request.user.is_authenticated and is_seller(request.user) and product.owner == request.user:
+        error_message = "You cannot add your own products to the cart."
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': False,
+                'message': error_message
+            }, status=400)
+        messages.error(request, error_message)
+        return redirect("product_detail", pk=product_id)
+
     if product.stock <= 0:
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({
@@ -267,6 +279,13 @@ def cart_update(request, product_id):
 
     product = get_object_or_404(Product, pk=product_id, is_active=True)
 
+    # Server-side ownership validation: prevent sellers from updating their own products in cart
+    if request.user.is_authenticated and is_seller(request.user) and product.owner == request.user:
+        del cart[pid]
+        request.session.modified = True
+        messages.error(request, "You cannot update your own products in the cart.")
+        return redirect("cart_detail")
+
     # Validate quantity doesn't exceed stock
     if qty > product.stock:
         if product.stock <= 0:
@@ -331,6 +350,19 @@ def cart_increment(request, product_id):
 
     product = get_object_or_404(Product, pk=product_id, is_active=True)
 
+    # Server-side ownership validation: prevent sellers from incrementing their own products in cart
+    if request.user.is_authenticated and is_seller(request.user) and product.owner == request.user:
+        del cart[pid]
+        request.session.modified = True
+        error_message = "You cannot modify your own products in the cart."
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': False,
+                'message': error_message
+            }, status=400)
+        messages.error(request, error_message)
+        return redirect("cart_detail")
+
     # Validate current quantity
     try:
         current_qty = max(0, int(cart.get(pid, 0)))
@@ -385,6 +417,19 @@ def cart_decrement(request, product_id):
         return redirect("cart_detail")
 
     product = get_object_or_404(Product, pk=product_id, is_active=True)
+
+    # Server-side ownership validation: prevent sellers from decrementing their own products in cart
+    if request.user.is_authenticated and is_seller(request.user) and product.owner == request.user:
+        del cart[pid]
+        request.session.modified = True
+        error_message = "You cannot modify your own products in the cart."
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': False,
+                'message': error_message
+            }, status=400)
+        messages.error(request, error_message)
+        return redirect("cart_detail")
 
     # Validate current quantity
     try:
@@ -491,6 +536,11 @@ def checkout(request):
                     if not product:
                         errors.append(
                             f"Product ID {pid_str} is no longer available.")
+                        continue
+
+                    # Server-side ownership validation: prevent sellers from purchasing their own products
+                    if request.user.is_authenticated and is_seller(request.user) and product.owner == request.user:
+                        errors.append(f"You cannot purchase your own product: {product.name}.")
                         continue
 
                     if product.stock <= 0:
