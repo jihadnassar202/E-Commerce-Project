@@ -180,6 +180,16 @@ def cart_detail(request):
 def cart_add(request, product_id):
     product = get_object_or_404(Product, pk=product_id, is_active=True)
 
+    # Ownership validation: prevent sellers from purchasing their own products
+    if request.user.is_authenticated and product.owner == request.user:
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': False,
+                'message': "You cannot purchase your own products."
+            }, status=400)
+        messages.error(request, "You cannot purchase your own products.")
+        return redirect("product_detail", pk=product_id)
+
     if product.stock <= 0:
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({
@@ -267,6 +277,13 @@ def cart_update(request, product_id):
 
     product = get_object_or_404(Product, pk=product_id, is_active=True)
 
+    # Ownership validation: prevent sellers from purchasing their own products
+    if request.user.is_authenticated and product.owner == request.user:
+        del cart[pid]
+        request.session.modified = True
+        messages.error(request, "You cannot purchase your own products. Item removed from cart.")
+        return redirect("cart_detail")
+
     # Validate quantity doesn't exceed stock
     if qty > product.stock:
         if product.stock <= 0:
@@ -330,6 +347,19 @@ def cart_increment(request, product_id):
         return redirect("cart_detail")
 
     product = get_object_or_404(Product, pk=product_id, is_active=True)
+
+    # Ownership validation: prevent sellers from purchasing their own products
+    if request.user.is_authenticated and product.owner == request.user:
+        del cart[pid]
+        request.session.modified = True
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({
+                'success': False,
+                'message': "You cannot purchase your own products. Item removed from cart.",
+                'removed': True
+            }, status=400)
+        messages.error(request, "You cannot purchase your own products. Item removed from cart.")
+        return redirect("cart_detail")
 
     # Validate current quantity
     try:
@@ -491,6 +521,12 @@ def checkout(request):
                     if not product:
                         errors.append(
                             f"Product ID {pid_str} is no longer available.")
+                        continue
+
+                    # Ownership validation: prevent sellers from purchasing their own products
+                    if request.user.is_authenticated and product.owner == request.user:
+                        errors.append(
+                            f"You cannot purchase your own product: {product.name}.")
                         continue
 
                     if product.stock <= 0:
