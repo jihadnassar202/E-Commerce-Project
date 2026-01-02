@@ -27,6 +27,11 @@
 
     <p class="mt-3">{{ product.description }}</p>
 
+    {% if is_owner %}
+    <div class="alert alert-info mt-3">
+      <strong>This is your product.</strong> You cannot purchase your own products.
+    </div>
+    {% else %}
     <form method="post" action="{% url 'cart_add' product.id %}" class="mt-3 cart-add-form"
       data-product-id="{{ product.id }}">
       {% csrf_token %}
@@ -35,6 +40,7 @@
       </button>
       <span class="cart-add-message ms-2"></span>
     </form>
+    {% endif %}
 
     <a href="{% url 'cart_detail' %}" class="btn btn-outline-secondary mt-2">
       View cart
