@@ -1,7 +1,12 @@
 <!doctype html>
-<html lang="en">
-{% load core_extras %}
 {% load i18n %}
+{% load core_extras %}
+
+{% get_current_language as LANGUAGE_CODE %}
+{% get_current_language_bidi as LANGUAGE_BIDI %}
+
+<html lang="{{ LANGUAGE_CODE|default:'en' }}" dir="{% if LANGUAGE_BIDI %}rtl{% else %}ltr{% endif %}">
+
 
 <head>
 
@@ -135,6 +140,49 @@
       .navbar .form-select option {
         color: black;
       }
+
+      /* RTL Support */
+      [dir="rtl"] .navbar-nav.me-auto {
+        margin-left: 0 !important;
+        margin-right: auto !important;
+      }
+
+      [dir="rtl"] .navbar-nav.d-flex.flex-row {
+        flex-direction: row-reverse;
+      }
+
+      [dir="rtl"] .toast-container {
+        left: 0;
+        right: auto;
+      }
+
+      [dir="rtl"] .badge.position-absolute.top-0.start-100 {
+        right: 100%;
+        left: auto;
+      }
+
+      [dir="rtl"] .btn-close {
+        margin-left: auto;
+        margin-right: -0.5rem;
+      }
+
+      [dir="rtl"] .ms-2 {
+        margin-left: 0 !important;
+        margin-right: 0.5rem !important;
+      }
+
+      [dir="rtl"] .me-auto {
+        margin-left: auto !important;
+        margin-right: 0 !important;
+      }
+
+      [dir="rtl"] .text-end {
+        text-align: left !important;
+      }
+
+      [dir="rtl"] .text-start {
+        text-align: right !important;
+      }
     </style>
   </head>
 
@@ -178,12 +226,14 @@
             <form action="{% url 'set_language' %}" method="post" class="d-inline">
               {% csrf_token %}
               <input name="next" type="hidden" value="{{ request.get_full_path }}">
-              <select name="language" onchange="this.form.submit()" class="form-select form-select-sm" style="width: auto; display: inline-block; background-color: transparent; color: white; border-color: rgba(255,255,255,.5);">
+              <select name="language" onchange="this.form.submit()" class="form-select form-select-sm"
+                style="width: auto; display: inline-block; background-color: transparent; color: white; border-color: rgba(255,255,255,.5);">
                 {% get_current_language as LANGUAGE_CODE %}
                 {% for lang_code, lang_name in LANGUAGES %}
-                  <option value="{{ lang_code }}" {% if lang_code == LANGUAGE_CODE %}selected{% endif %} style="color: black;">
-                    {{ lang_name }}
-                  </option>
+                <option value="{{ lang_code }}" {% if lang_code == LANGUAGE_CODE %}selected{% endif %}
+                  style="color: black;">
+                  {{ lang_name }}
+                </option>
                 {% endfor %}
               </select>
             </form>
@@ -225,8 +275,10 @@
   <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1055;">
     {% if messages %}
     {% for message in messages %}
-    <div class="toast" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="true" data-bs-delay="5000">
-      <div class="toast-header {% if message.tags == 'error' or message.tags == 'danger' %}text-bg-danger{% elif message.tags == 'success' %}text-bg-success{% elif message.tags == 'warning' %}text-bg-warning{% else %}text-bg-info{% endif %}">
+    <div class="toast" role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="true"
+      data-bs-delay="5000">
+      <div
+        class="toast-header {% if message.tags == 'error' or message.tags == 'danger' %}text-bg-danger{% elif message.tags == 'success' %}text-bg-success{% elif message.tags == 'warning' %}text-bg-warning{% else %}text-bg-info{% endif %}">
         <strong class="me-auto">
           {% if message.tags == 'error' or message.tags == 'danger' %}Error
           {% elif message.tags == 'success' %}Success
@@ -265,9 +317,9 @@
     }
 
     // Initialize and show toast notifications
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function () {
       const toastElements = document.querySelectorAll('.toast');
-      toastElements.forEach(function(toastElement) {
+      toastElements.forEach(function (toastElement) {
         const toast = new bootstrap.Toast(toastElement);
         toast.show();
       });
