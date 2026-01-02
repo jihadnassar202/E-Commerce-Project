@@ -1,10 +1,11 @@
 {% extends "base.html" %}
-{% block title %}Cart{% endblock %}
+{% load i18n %}
+{% block title %}{% trans "Cart" %}{% endblock %}
 
 {% block content %}
 <div class="card shadow-sm">
   <div class="card-body">
-    <h2 class="fw-bold mb-4">Your Cart</h2>
+    <h2 class="fw-bold mb-4">{% trans "Your Cart" %}</h2>
 
     {% if items %}
     <div class="mb-4" id="cart-items">
@@ -20,7 +21,7 @@
             {% else %}
             <div class="bg-light d-flex align-items-center justify-content-center"
               style="width: 60px; height: 60px; border-radius: 8px;">
-              <span class="text-muted" style="font-size: 0.7rem;">No Image</span>
+              <span class="text-muted" style="font-size: 0.7rem;">{% trans "No Image" %}</span>
             </div>
             {% endif %}
           </div>
@@ -57,20 +58,25 @@
     <!-- Total and Checkout -->
     <div
       class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center pt-3 border-top gap-3">
-      <h4 class="fw-bold m-0">Total: $<span id="cart-total">{{ total }}</span></h4>
+      <h4 class="fw-bold m-0">{% trans "Total:" %} $<span id="cart-total">{{ total }}</span></h4>
       <form method="post" action="{% url 'checkout' %}" class="w-100 w-md-auto">
         {% csrf_token %}
-        <button class="btn btn-success w-100 w-md-auto px-4">Checkout</button>
+        <button class="btn btn-success w-100 w-md-auto px-4">{% trans "Checkout" %}</button>
       </form>
     </div>
     {% else %}
-    <div class="alert alert-info">Cart is empty.</div>
+    <div class="alert alert-info">{% trans "Cart is empty." %}</div>
     {% endif %}
   </div>
 </div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+  // Get current language prefix from URL
+  const currentPath = window.location.pathname;
+  const langMatch = currentPath.match(/^\/([a-z]{2})\//);
+  const langPrefix = langMatch ? `/${langMatch[1]}` : '';
+  
   // Helper function to get CSRF token
   function getCSRFToken() {
     const tokenInput = document.querySelector('[name=csrfmiddlewaretoken]');
@@ -133,7 +139,7 @@ document.addEventListener('DOMContentLoaded', function() {
       const formData = new FormData();
       formData.append('csrfmiddlewaretoken', getCSRFToken());
       
-      fetch(`/cart/increment/${productId}/`, {
+      fetch(`${langPrefix}/cart/increment/${productId}/`, {
         method: 'POST',
         body: formData,
         headers: {
@@ -160,7 +166,7 @@ document.addEventListener('DOMContentLoaded', function() {
       })
       .catch(error => {
         console.error('Error:', error);
-        alert('An error occurred. Please try again.');
+        alert('{% trans "An error occurred. Please try again." %}');
         incrementBtn.disabled = false;
         decrementBtn.disabled = false;
       });
@@ -183,7 +189,7 @@ document.addEventListener('DOMContentLoaded', function() {
       const formData = new FormData();
       formData.append('csrfmiddlewaretoken', getCSRFToken());
       
-      fetch(`/cart/decrement/${productId}/`, {
+      fetch(`${langPrefix}/cart/decrement/${productId}/`, {
         method: 'POST',
         body: formData,
         headers: {
@@ -214,7 +220,7 @@ document.addEventListener('DOMContentLoaded', function() {
       })
       .catch(error => {
         console.error('Error:', error);
-        alert('An error occurred. Please try again.');
+        alert('{% trans "An error occurred. Please try again." %}');
         incrementBtn.disabled = false;
         decrementBtn.disabled = false;
       });
@@ -224,7 +230,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // Remove item
   document.querySelectorAll('.cart-remove-btn').forEach(btn => {
     btn.addEventListener('click', function() {
-      if (!confirm('Are you sure you want to remove this item from your cart?')) {
+      if (!confirm('{% trans "Are you sure you want to remove this item from your cart?" %}')) {
         return;
       }
       
@@ -237,7 +243,7 @@ document.addEventListener('DOMContentLoaded', function() {
       const formData = new FormData();
       formData.append('csrfmiddlewaretoken', getCSRFToken());
       
-      fetch(`/cart/remove/${productId}/`, {
+      fetch(`${langPrefix}/cart/remove/${productId}/`, {
         method: 'POST',
         body: formData,
         headers: {
@@ -257,7 +263,7 @@ document.addEventListener('DOMContentLoaded', function() {
       })
       .catch(error => {
         console.error('Error:', error);
-        alert('An error occurred. Please try again.');
+        alert('{% trans "An error occurred. Please try again." %}');
         removeBtn.disabled = false;
       });
     });

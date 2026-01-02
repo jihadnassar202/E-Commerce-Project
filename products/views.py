@@ -8,6 +8,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.template.loader import render_to_string
 from django.contrib.admin.views.decorators import staff_member_required
 from django.views.decorators.http import require_POST
+from django.utils.translation import gettext_lazy as _
 from core.utils import is_seller
 from .decorators import seller_required
 from .forms import ProductForm
@@ -115,9 +116,9 @@ def product_create(request):
             product = form.save(commit=False)
             product.owner = request.user
             product.save()
-            messages.success(request, "Product created successfully.")
+            messages.success(request, _("Product created successfully."))
             return redirect("product_detail", pk=product.pk)
-        messages.error(request, "Fix the errors below.")
+        messages.error(request, _("Fix the errors below."))
     else:
         form = ProductForm()
     return render(request, "products/product_form.html", {"form": form, "mode": "create"})
@@ -132,9 +133,9 @@ def product_update(request, pk):
         form = ProductForm(request.POST, request.FILES, instance=product)
         if form.is_valid():
             form.save()
-            messages.success(request, "Product updated successfully.")
+            messages.success(request, _("Product updated successfully."))
             return redirect("product_detail", pk=product.pk)
-        messages.error(request, "Fix the errors below.")
+        messages.error(request, _("Fix the errors below."))
     else:
         form = ProductForm(instance=product)
     return render(request, "products/product_form.html", {"form": form, "mode": "update", "product": product})
@@ -147,7 +148,7 @@ def product_delete(request, pk):
     product = get_object_or_404(Product, pk=pk) if request.user.is_superuser else \
         get_object_or_404(Product, pk=pk, owner=request.user)
     product.delete()
-    messages.success(request, "Product deleted.")
+    messages.success(request, _("Product deleted."))
     return redirect("product_list")
 
 

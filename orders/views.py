@@ -7,6 +7,7 @@ from django.db import transaction
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
+from django.utils.translation import gettext_lazy as _
 
 from products.models import Product
 from .models import Order, OrderItem
@@ -155,7 +156,7 @@ def cart_detail(request):
     if removed_items:
         messages.warning(
             request,
-            f"Some items were removed from your cart due to invalid quantities or unavailable products."
+            _("Some items were removed from your cart due to invalid quantities or unavailable products.")
         )
 
     ids = [int(pid) for pid in cleaned_cart.keys()] if cleaned_cart else []
@@ -185,18 +186,18 @@ def cart_add(request, product_id):
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({
                 'success': False,
-                'message': "You cannot purchase your own products."
+                'message': _("You cannot purchase your own products.")
             }, status=400)
-        messages.error(request, "You cannot purchase your own products.")
+        messages.error(request, _("You cannot purchase your own products."))
         return redirect("product_detail", pk=product_id)
 
     if product.stock <= 0:
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({
                 'success': False,
-                'message': f"{product.name} is sold out."
+                'message': _("%(product_name)s is sold out.") % {'product_name': product.name}
             }, status=400)
-        messages.error(request, f"{product.name} is sold out.")
+        messages.error(request, _("%(product_name)s is sold out.") % {'product_name': product.name})
         return redirect("product_list")
 
     # Get quantity from form, default to 1
@@ -224,18 +225,18 @@ def cart_add(request, product_id):
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({
                 'success': False,
-                'message': 'Quantity must be greater than zero.'
+                'message': _('Quantity must be greater than zero.')
             }, status=400)
-        messages.error(request, 'Quantity must be greater than zero.')
+        messages.error(request, _('Quantity must be greater than zero.'))
         return redirect("product_list")
 
     if new_qty > product.stock:
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({
                 'success': False,
-                'message': f"Only {product.stock} left in stock."
+                'message': _("Only %(stock)d left in stock.") % {'stock': product.stock}
             }, status=400)
-        messages.error(request, f"Only {product.stock} left in stock.")
+        messages.error(request, _("Only %(stock)d left in stock.") % {'stock': product.stock})
         return redirect("product_list")
 
     cart[pid] = new_qty
@@ -244,12 +245,12 @@ def cart_add(request, product_id):
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return JsonResponse({
             'success': True,
-            'message': f"Added {product.name} to cart.",
+            'message': _("Added %(product_name)s to cart.") % {'product_name': product.name},
             'cart_count': _get_cart_count(request.session),
             'new_quantity': new_qty
         })
 
-    messages.success(request, f"Added {product.name} to cart.")
+    messages.success(request, _("Added %(product_name)s to cart.") % {'product_name': product.name})
     return redirect("product_list")
 
 
@@ -272,7 +273,7 @@ def cart_update(request, product_id):
     if qty <= 0:
         del cart[pid]
         request.session.modified = True
-        messages.success(request, "Item removed.")
+        messages.success(request, _("Item removed."))
         return redirect("cart_detail")
 
     product = get_object_or_404(Product, pk=product_id, is_active=True)
@@ -290,15 +291,15 @@ def cart_update(request, product_id):
             del cart[pid]
             request.session.modified = True
             messages.error(
-                request, f"{product.name} is sold out and has been removed from your cart.")
+                request, _("%(product_name)s is sold out and has been removed from your cart.") % {'product_name': product.name})
         else:
             messages.error(
-                request, f"Only {product.stock} left in stock for {product.name}. Quantity adjusted.")
+                request, _("Only %(stock)d left in stock for %(product_name)s. Quantity adjusted.") % {'stock': product.stock, 'product_name': product.name})
             qty = product.stock
 
     cart[pid] = qty
     request.session.modified = True
-    messages.success(request, "Quantity updated.")
+    messages.success(request, _("Quantity updated."))
     return redirect("cart_detail")
 
 
@@ -316,17 +317,17 @@ def cart_remove(request, product_id):
             cart_total = _calculate_cart_total(cart)
             return JsonResponse({
                 'success': True,
-                'message': 'Removed item from cart.',
+                'message': _('Removed item from cart.'),
                 'cart_total': str(cart_total),
                 'cart_count': _get_cart_count(request.session)
             })
 
-        messages.success(request, "Removed item from cart.")
+        messages.success(request, _("Removed item from cart."))
 
     if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return JsonResponse({
             'success': False,
-            'message': 'Item not found in cart.'
+            'message': _('Item not found in cart.')
         }, status=404)
 
     return redirect("cart_detail")
@@ -355,10 +356,10 @@ def cart_increment(request, product_id):
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({
                 'success': False,
-                'message': "You cannot purchase your own products. Item removed from cart.",
+                'message': _("You cannot purchase your own products. Item removed from cart."),
                 'removed': True
             }, status=400)
-        messages.error(request, "You cannot purchase your own products. Item removed from cart.")
+        messages.error(request, _("You cannot purchase your own products. Item removed from cart."))
         return redirect("cart_detail")
 
     # Validate current quantity
@@ -373,11 +374,11 @@ def cart_increment(request, product_id):
         if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             return JsonResponse({
                 'success': False,
-                'message': f"Only {product.stock} left in stock.",
+                'message': _("Only %(stock)d left in stock.") % {'stock': product.stock},
                 'quantity': current_qty,
                 'max_quantity': product.stock
             }, status=400)
-        messages.error(request, f"Only {product.stock} left in stock.")
+        messages.error(request, _("Only %(stock)d left in stock.") % {'stock': product.stock})
         return redirect("cart_detail")
 
     cart[pid] = new_qty
@@ -440,7 +441,7 @@ def cart_decrement(request, product_id):
             return JsonResponse({
                 'success': True,
                 'removed': True,
-                'message': 'Item removed from cart.',
+                'message': _('Item removed from cart.'),
                 'cart_total': str(cart_total),
                 'cart_count': _get_cart_count(request.session)
             })
@@ -456,7 +457,7 @@ def cart_decrement(request, product_id):
             })
 
     if removed:
-        messages.success(request, "Item removed from cart.")
+        messages.success(request, _("Item removed from cart."))
     return redirect("cart_detail")
 
 
@@ -468,9 +469,9 @@ def checkout(request):
     if not cleaned_cart:
         if removed_items:
             messages.warning(
-                request, "Your cart was cleared due to invalid items.")
+                request, _("Your cart was cleared due to invalid items."))
         else:
-            messages.error(request, "Your cart is empty.")
+            messages.error(request, _("Your cart is empty."))
         return redirect("product_list")
 
     ids = [int(pid) for pid in cleaned_cart.keys()]
@@ -508,32 +509,34 @@ def checkout(request):
                         qty = int(qty_str)
                     except (ValueError, TypeError):
                         errors.append(
-                            f"Invalid quantity for product ID {pid_str}.")
+                            _("Invalid quantity for product ID %(pid)s.") % {'pid': pid_str})
                         continue
 
                     if qty <= 0:
                         errors.append(
-                            f"Invalid quantity (must be greater than zero) for product ID {pid_str}.")
+                            _("Invalid quantity (must be greater than zero) for product ID %(pid)s.") % {'pid': pid_str})
                         continue
 
                     product = locked_map.get(pid)
 
                     if not product:
                         errors.append(
-                            f"Product ID {pid_str} is no longer available.")
+                            _("Product ID %(pid)s is no longer available.") % {'pid': pid_str})
                         continue
 
                     # Ownership validation: prevent sellers from purchasing their own products
                     if request.user.is_authenticated and product.owner == request.user:
                         errors.append(
-                            f"You cannot purchase your own product: {product.name}.")
+                            _("You cannot purchase your own product: %(product_name)s.") % {'product_name': product.name})
                         continue
 
                     if product.stock <= 0:
-                        errors.append(f"{product.name} is sold out.")
+                        errors.append(_("%(product_name)s is sold out.") % {'product_name': product.name})
                     elif product.stock < qty:
                         errors.append(
-                            f"{product.name}: Only {product.stock} available, but {qty} requested."
+                            _("%(product_name)s: Only %(stock)d available, but %(qty)d requested.") % {
+                                'product_name': product.name, 'stock': product.stock, 'qty': qty
+                            }
                         )
 
                 # If there are any errors, show them all and abort
@@ -576,11 +579,11 @@ def checkout(request):
                 request.session.modified = True
 
                 messages.success(
-                    request, f"Order #{order.pk} created successfully!")
+                    request, _("Order #%(order_id)d created successfully!") % {'order_id': order.pk})
                 return redirect("order_success", order_id=order.pk)
 
         except ValueError as e:
-            messages.error(request, f"Invalid data in cart: {str(e)}")
+            messages.error(request, _("Invalid data in cart: %(error)s") % {'error': str(e)})
             return redirect("cart_detail")
         except Exception as e:
             # Log the actual error for debugging
@@ -590,7 +593,7 @@ def checkout(request):
 
             messages.error(
                 request,
-                f"An error occurred during checkout. Please try again. If the problem persists, contact support."
+                _("An error occurred during checkout. Please try again. If the problem persists, contact support.")
             )
             return redirect("cart_detail")
 

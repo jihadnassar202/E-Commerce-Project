@@ -1,22 +1,23 @@
 {% extends "base.html" %}
-{% block title %}Home{% endblock %}
+{% load i18n %}
+{% block title %}{% trans "Home" %}{% endblock %}
 
 {% block content %}
 <div class="p-3 p-md-4 bg-light rounded">
-  <h1 class="mb-2">Welcome</h1>
-  <p class="mb-3">Browse products or view your cart.</p>
+  <h1 class="mb-2">{% trans "Welcome" %}</h1>
+  <p class="mb-3">{% trans "Browse products or view your cart." %}</p>
 
   <div class="d-flex flex-column flex-md-row gap-2">
-    <a class="btn btn-primary" href="{% url 'product_list' %}">Go to Products</a>
-    <a class="btn btn-outline-secondary" href="{% url 'cart_detail' %}">View Cart</a>
+    <a class="btn btn-primary" href="{% url 'product_list' %}">{% trans "Go to Products" %}</a>
+    <a class="btn btn-outline-secondary" href="{% url 'cart_detail' %}">{% trans "View Cart" %}</a>
   </div>
 </div>
 
 <hr class="my-4">
 
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-3 gap-2">
-  <h3 class="m-0">Latest Products</h3>
-  <a class="btn btn-sm btn-outline-dark" href="{% url 'product_list' %}">See all</a>
+  <h3 class="m-0">{% trans "Latest Products" %}</h3>
+  <a class="btn btn-sm btn-outline-dark" href="{% url 'product_list' %}">{% trans "See all" %}</a>
 </div>
 
 <div class="row">
@@ -27,7 +28,7 @@
           <img src="{{ p.image.url }}" class="card-img-top" alt="{{ p.name }}" style="height: 200px; object-fit: cover;">
         {% else %}
           <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
-            <span class="text-muted">No Image</span>
+            <span class="text-muted">{% trans "No Image" %}</span>
           </div>
         {% endif %}
         <div class="card-body d-flex flex-column">
@@ -38,7 +39,7 @@
             <div class="d-flex gap-2 align-items-center">
               <input type="number" name="quantity" value="1" min="1" max="{{ p.stock }}" class="form-control form-control-sm" style="width: 80px;" {% if p.stock == 0 %}disabled{% endif %}>
               <button type="submit" class="btn btn-success btn-sm flex-fill" {% if p.stock == 0 %}disabled{% endif %}>
-                {% if p.stock == 0 %}Sold Out{% else %}Add{% endif %}
+                {% if p.stock == 0 %}{% trans "Sold Out" %}{% else %}{% trans "Add" %}{% endif %}
               </button>
             </div>
             <span class="cart-add-message" style="font-size: 0.75rem; display: block; margin-top: 0.25rem;"></span>
@@ -49,7 +50,7 @@
   {% empty %}
     <div class="col-12">
       <div class="alert alert-warning">
-        No products yet. Add some from Admin.
+        {% trans "No products yet. Add some from Admin." %}
       </div>
     </div>
   {% endfor %}
@@ -69,7 +70,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
       // Disable button and show loading
       button.disabled = true;
-      button.textContent = 'Adding...';
+      button.textContent = '{% trans "Adding..." %}';
       messageSpan.textContent = '';
       messageSpan.className = 'cart-add-message';
 
@@ -86,7 +87,7 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
           if (data.success) {
-            button.textContent = 'Added';
+            button.textContent = '{% trans "Added" %}';
             button.classList.remove('btn-success');
             button.classList.add('btn-secondary');
             button.disabled = false;
@@ -106,7 +107,7 @@ document.addEventListener('DOMContentLoaded', function() {
           console.error('Error:', error);
           button.textContent = originalText;
           button.disabled = false;
-          messageSpan.textContent = 'An error occurred. Please try again.';
+          messageSpan.textContent = '{% trans "An error occurred. Please try again." %}';
           messageSpan.className = 'cart-add-message text-danger';
         });
     });

@@ -1,12 +1,13 @@
 {% extends "base.html" %}
-{% block title %}Register{% endblock %}
+{% load i18n %}
+{% block title %}{% trans "Register" %}{% endblock %}
 {% block content %}
 <div class="row justify-content-center">
   <div class="col-md-5 col-lg-4">
     <div class="card shadow-sm">
       <div class="card-body">
-        <h2 class="mb-2 text-center">Create account</h2>
-        <p class="text-muted text-center small mb-4">Join to browse, sell, and checkout.</p>
+        <h2 class="mb-2 text-center">{% trans "Create account" %}</h2>
+        <p class="text-muted text-center small mb-4">{% trans "Join to browse, sell, and checkout." %}</p>
 
         <form method="post" novalidate>
   {% csrf_token %}
@@ -16,7 +17,7 @@
           {% endif %}
 
           <div class="mb-3">
-            <label class="form-label" for="{{ form.username.id_for_label }}">Username</label>
+            <label class="form-label" for="{{ form.username.id_for_label }}">{% trans "Username" %}</label>
             {{ form.username }}
             {% if form.username.errors %}
               <div class="text-danger small">{{ form.username.errors|striptags }}</div>
@@ -24,7 +25,7 @@
           </div>
 
           <div class="mb-3">
-            <label class="form-label" for="{{ form.email.id_for_label }}">Email</label>
+            <label class="form-label" for="{{ form.email.id_for_label }}">{% trans "Email" %}</label>
             {{ form.email }}
             {% if form.email.errors %}
               <div class="text-danger small">{{ form.email.errors|striptags }}</div>
@@ -32,7 +33,7 @@
           </div>
 
           <div class="mb-3">
-            <label class="form-label" for="{{ form.password1.id_for_label }}">Password</label>
+            <label class="form-label" for="{{ form.password1.id_for_label }}">{% trans "Password" %}</label>
             {{ form.password1 }}
             {% if form.password1.help_text %}
               <div class="form-text small">{{ form.password1.help_text|safe }}</div>
@@ -43,19 +44,19 @@
           </div>
 
           <div class="mb-3">
-            <label class="form-label" for="{{ form.password2.id_for_label }}">Confirm password</label>
+            <label class="form-label" for="{{ form.password2.id_for_label }}">{% trans "Confirm password" %}</label>
             {{ form.password2 }}
             {% if form.password2.errors %}
               <div class="text-danger small">{{ form.password2.errors|striptags }}</div>
             {% endif %}
           </div>
 
-          <button class="btn btn-primary w-100">Register</button>
+          <button class="btn btn-primary w-100">{% trans "Register" %}</button>
 </form>
 
         <p class="text-center mt-3 mb-0">
-          <span class="text-muted">Already have an account?</span>
-          <a href="{% url 'login' %}">Sign in</a>
+          <span class="text-muted">{% trans "Already have an account?" %}</span>
+          <a href="{% url 'login' %}">{% trans "Sign in" %}</a>
         </p>
       </div>
     </div>

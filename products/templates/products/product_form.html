@@ -1,17 +1,18 @@
 {% extends "base.html" %}
-{% block title %}{% if mode == "create" %}New Product{% else %}Edit Product{% endif %}{% endblock %}
+{% load i18n %}
+{% block title %}{% if mode == "create" %}{% trans "New Product" %}{% else %}{% trans "Edit Product" %}{% endif %}{% endblock %}
 
 {% block content %}
-  <h1>{% if mode == "create" %}New Product{% else %}Edit Product{% endif %}</h1>
+  <h1>{% if mode == "create" %}{% trans "New Product" %}{% else %}{% trans "Edit Product" %}{% endif %}</h1>
 
   <form method="post" enctype="multipart/form-data" class="card card-body shadow-sm">
     {% csrf_token %}
     {{ form.as_p }}
     <div class="d-flex gap-2">
       <button type="submit" class="btn btn-primary">
-        {% if mode == "create" %}Create{% else %}Save{% endif %}
+        {% if mode == "create" %}{% trans "Create" %}{% else %}{% trans "Save" %}{% endif %}
       </button>
-      <a class="btn btn-outline-secondary" href="{% url 'product_list' %}">Cancel</a>
+      <a class="btn btn-outline-secondary" href="{% url 'product_list' %}">{% trans "Cancel" %}</a>
     </div>
   </form>
   {% endblock %}

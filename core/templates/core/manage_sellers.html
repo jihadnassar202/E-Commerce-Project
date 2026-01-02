@@ -1,14 +1,15 @@
 {% extends "base.html" %}
-{% block title %}Manage Sellers{% endblock %}
+{% load i18n %}
+{% block title %}{% trans "Manage Sellers" %}{% endblock %}
 {% block content %}
-<h2>Manage Sellers</h2>
+<h2>{% trans "Manage Sellers" %}</h2>
 
 <table class="table table-striped align-middle">
   <thead>
     <tr>
-      <th>User</th>
-      <th>Email</th>
-      <th>Seller?</th>
+      <th>{% trans "User" %}</th>
+      <th>{% trans "Email" %}</th>
+      <th>{% trans "Seller?" %}</th>
       <th></th>
     </tr>
   </thead>
@@ -20,9 +21,9 @@
 
       <td>
         {% if u.is_superuser or u.id in seller_ids %}
-          Yes
+          {% trans "Yes" %}
         {% else %}
-          No
+          {% trans "No" %}
         {% endif %}
       </td>
 
@@ -30,9 +31,9 @@
         <form method="post">{% csrf_token %}
           <input type="hidden" name="user_id" value="{{ u.id }}">
           {% if u.id in seller_ids %}
-            <button class="btn btn-sm btn-danger">Remove Seller</button>
+            <button class="btn btn-sm btn-danger">{% trans "Remove Seller" %}</button>
           {% else %}
-            <button class="btn btn-sm btn-success">Make Seller</button>
+            <button class="btn btn-sm btn-success">{% trans "Make Seller" %}</button>
           {% endif %}
         </form>
       </td>

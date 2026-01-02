@@ -1,19 +1,20 @@
 {% extends "base.html" %}
-{% block title %}Products{% endblock %}
+{% load i18n %}
+{% block title %}{% trans "Products" %}{% endblock %}
 
 {% block content %}
 <div
   class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-3 mb-md-4 gap-2">
-  <h1 class="m-0">Products</h1>
+  <h1 class="m-0">{% trans "Products" %}</h1>
   {% if perms.products.add_product %}
-  <a class="btn btn-primary" href="{% url 'product_create' %}">+ Add Product</a>
+  <a class="btn btn-primary" href="{% url 'product_create' %}">+ {% trans "Add Product" %}</a>
   {% endif %}
 </div>
 
 {% if mine == "1" %}
 <div class="alert alert-info">
-  <strong>My Products:</strong> Showing only products you own. <a href="{% url 'product_list' %}"
-    class="alert-link">View all products</a>
+  <strong>{% trans "My Products:" %}</strong> {% trans "Showing only products you own." %} <a href="{% url 'product_list' %}"
+    class="alert-link">{% trans "View all products" %}</a>
 </div>
 {% endif %}
 
@@ -22,12 +23,12 @@
   <input type="hidden" name="mine" value="1">
   {% endif %}
   <div class="col-12 col-md-5">
-    <input class="form-control" type="text" name="q" id="search-input" placeholder="Search..." value="{{ q }}">
+    <input class="form-control" type="text" name="q" id="search-input" placeholder="{% trans 'Search...' %}" value="{{ q }}">
   </div>
 
   <div class="col-12 col-md-3">
     <select class="form-select" name="category" id="category-select">
-      <option value="">All Categories</option>
+      <option value="">{% trans "All Categories" %}</option>
       {% for c in categories %}
         {% with cid=c.id|stringformat:"s" %}
           <option value="{{ c.id }}" {% if category_id|stringformat:"s" == cid %}selected{% endif %}>
@@ -40,14 +41,14 @@
 
   <div class="col-12 col-md-2">
     <select class="form-select" name="sort" id="sort-select">
-      <option value="newest" {% if sort == "newest" %}selected{% endif %}>Newest</option>
-      <option value="price_asc" {% if sort == "price_asc" %}selected{% endif %}>Price ↑</option>
-      <option value="price_desc" {% if sort == "price_desc" %}selected{% endif %}>Price ↓</option>
+      <option value="newest" {% if sort == "newest" %}selected{% endif %}>{% trans "Newest" %}</option>
+      <option value="price_asc" {% if sort == "price_asc" %}selected{% endif %}>{% trans "Price ↑" %}</option>
+      <option value="price_desc" {% if sort == "price_desc" %}selected{% endif %}>{% trans "Price ↓" %}</option>
     </select>
   </div>
 
   <div class="col-12 col-md-2 d-grid">
-    <button class="btn btn-secondary" type="button" id="clear-filters">Clear</button>
+    <button class="btn btn-secondary" type="button" id="clear-filters">{% trans "Clear" %}</button>
   </div>
 </form>
 
@@ -165,7 +166,7 @@
 
         // Disable button and show loading
         button.disabled = true;
-        button.textContent = 'Adding...';
+        button.textContent = '{% trans "Adding..." %}';
         messageSpan.textContent = '';
         messageSpan.className = 'cart-add-message';
 
@@ -182,7 +183,7 @@
           .then(response => response.json())
           .then(data => {
             if (data.success) {
-              button.textContent = 'Added';
+              button.textContent = '{% trans "Added" %}';
               button.classList.remove('btn-success');
               button.classList.add('btn-secondary');
               button.disabled = false;
@@ -202,7 +203,7 @@
             console.error('Error:', error);
             button.textContent = originalText;
             button.disabled = false;
-            messageSpan.textContent = 'An error occurred. Please try again.';
+            messageSpan.textContent = '{% trans "An error occurred. Please try again." %}';
             messageSpan.className = 'cart-add-message text-danger';
           });
       });

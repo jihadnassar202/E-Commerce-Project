@@ -1,0 +1,552 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-01-03 12:00+0000\n"
+"PO-Revision-Date: 2025-01-03 12:00+0000\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: Arabic <LL@li.org>\n"
+"Language: ar\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=6; plural=(n==0 ? 0 : n==1 ? 1 : n==2 ? 2 : n%100>=3 && n%100<=10 ? 3 : n%100>=11 && n%100<=99 ? 4 : 5);\n"
+
+# ============================================================================
+# NAVBAR & BASE TEMPLATE
+# ============================================================================
+msgid "E-Commerce"
+msgstr "التجارة الإلكترونية"
+
+msgid "Ecommerce"
+msgstr "التجارة الإلكترونية"
+
+msgid "Home"
+msgstr "الرئيسية"
+
+msgid "My Products"
+msgstr "منتجاتي"
+
+msgid "Manage Sellers"
+msgstr "إدارة البائعين"
+
+msgid "Admin"
+msgstr "المسؤول"
+
+msgid "Admin Products"
+msgstr "منتجات المسؤول"
+
+msgid "View Cart"
+msgstr "عرض السلة"
+
+msgid "Logout"
+msgstr "تسجيل الخروج"
+
+msgid "Login"
+msgstr "تسجيل الدخول"
+
+msgid "Register"
+msgstr "التسجيل"
+
+msgid "Hi %(username)s"
+msgstr "مرحباً %(username)s"
+
+msgid "Error"
+msgstr "خطأ"
+
+msgid "Success"
+msgstr "نجح"
+
+msgid "Warning"
+msgstr "تحذير"
+
+msgid "Info"
+msgstr "معلومات"
+
+msgid "Close"
+msgstr "إغلاق"
+
+# ============================================================================
+# PRODUCTS PAGES
+# ============================================================================
+msgid "Products"
+msgstr "المنتجات"
+
+msgid "Add Product"
+msgstr "إضافة منتج"
+
+msgid "My Products:"
+msgstr "منتجاتي:"
+
+msgid "Showing only products you own."
+msgstr "عرض منتجاتك فقط."
+
+msgid "View all products"
+msgstr "عرض جميع المنتجات"
+
+msgid "Search..."
+msgstr "بحث..."
+
+msgid "All Categories"
+msgstr "جميع الفئات"
+
+msgid "Newest"
+msgstr "الأحدث"
+
+msgid "Price ↑"
+msgstr "السعر ↑"
+
+msgid "Price ↓"
+msgstr "السعر ↓"
+
+msgid "Clear"
+msgstr "مسح"
+
+msgid "Sold Out"
+msgstr "نفدت الكمية"
+
+msgid "Sold out"
+msgstr "نفدت الكمية"
+
+msgid "No Image"
+msgstr "لا توجد صورة"
+
+msgid "No image"
+msgstr "لا توجد صورة"
+
+msgid "Add"
+msgstr "إضافة"
+
+msgid "No products found."
+msgstr "لم يتم العثور على منتجات."
+
+msgid "Category:"
+msgstr "الفئة:"
+
+msgid "Price:"
+msgstr "السعر:"
+
+msgid "Stock:"
+msgstr "المخزون:"
+
+msgid "This is your product."
+msgstr "هذا منتجك."
+
+msgid "You cannot purchase your own products."
+msgstr "لا يمكنك شراء منتجاتك الخاصة."
+
+msgid "Adding..."
+msgstr "جاري الإضافة..."
+
+msgid "Added!"
+msgstr "تمت الإضافة!"
+
+msgid "Added"
+msgstr "تمت الإضافة"
+
+msgid "An error occurred. Please try again."
+msgstr "حدث خطأ. يرجى المحاولة مرة أخرى."
+
+msgid "Add to cart"
+msgstr "إضافة إلى السلة"
+
+msgid "View cart"
+msgstr "عرض السلة"
+
+msgid "Edit"
+msgstr "تعديل"
+
+msgid "Delete"
+msgstr "حذف"
+
+msgid "Back to products"
+msgstr "العودة إلى المنتجات"
+
+msgid "Delete Product"
+msgstr "حذف المنتج"
+
+msgid "Are you sure you want to delete %(product_name)s?"
+msgstr "هل أنت متأكد من حذف %(product_name)s؟"
+
+msgid "This action cannot be undone."
+msgstr "لا يمكن التراجع عن هذا الإجراء."
+
+msgid "Cancel"
+msgstr "إلغاء"
+
+msgid "New Product"
+msgstr "منتج جديد"
+
+msgid "Edit Product"
+msgstr "تعديل المنتج"
+
+msgid "Create"
+msgstr "إنشاء"
+
+msgid "Save"
+msgstr "حفظ"
+
+# ============================================================================
+# CART & CHECKOUT
+# ============================================================================
+msgid "Cart"
+msgstr "السلة"
+
+msgid "Your Cart"
+msgstr "سلتك"
+
+msgid "Cart is empty."
+msgstr "السلة فارغة."
+
+msgid "Total:"
+msgstr "الإجمالي:"
+
+msgid "Checkout"
+msgstr "الدفع"
+
+msgid "Qty:"
+msgstr "الكمية:"
+
+msgid "Back to cart"
+msgstr "العودة إلى السلة"
+
+msgid "Confirm Order"
+msgstr "تأكيد الطلب"
+
+msgid "No items to checkout."
+msgstr "لا توجد عناصر للدفع."
+
+msgid "Are you sure you want to remove this item from your cart?"
+msgstr "هل أنت متأكد من إزالة هذا العنصر من سلتك؟"
+
+# ============================================================================
+# ORDERS
+# ============================================================================
+msgid "Order Success"
+msgstr "نجح الطلب"
+
+msgid "Order created"
+msgstr "تم إنشاء الطلب"
+
+msgid "Order ID:"
+msgstr "رقم الطلب:"
+
+msgid "Status:"
+msgstr "الحالة:"
+
+msgid "Total items:"
+msgstr "إجمالي العناصر:"
+
+msgid "My Orders"
+msgstr "طلباتي"
+
+msgid "ID"
+msgstr "الرقم"
+
+msgid "Created"
+msgstr "تاريخ الإنشاء"
+
+msgid "View"
+msgstr "عرض"
+
+msgid "Previous"
+msgstr "السابق"
+
+msgid "Next"
+msgstr "التالي"
+
+msgid "Page %(page)d of %(total)d"
+msgstr "صفحة %(page)d من %(total)d"
+
+msgid "No orders yet."
+msgstr "لا توجد طلبات بعد."
+
+msgid "Order #%(order_id)d"
+msgstr "الطلب #%(order_id)d"
+
+msgid "Placed:"
+msgstr "تاريخ الطلب:"
+
+msgid "Back to my orders"
+msgstr "العودة إلى طلباتي"
+
+# ============================================================================
+# AUTHENTICATION
+# ============================================================================
+msgid "Create account"
+msgstr "إنشاء حساب"
+
+msgid "Join to browse, sell, and checkout."
+msgstr "انضم للتصفح والبيع والدفع."
+
+msgid "Username"
+msgstr "اسم المستخدم"
+
+msgid "Email"
+msgstr "البريد الإلكتروني"
+
+msgid "Password"
+msgstr "كلمة المرور"
+
+msgid "Confirm password"
+msgstr "تأكيد كلمة المرور"
+
+msgid "Already have an account?"
+msgstr "هل لديك حساب بالفعل؟"
+
+msgid "Sign in"
+msgstr "تسجيل الدخول"
+
+# ============================================================================
+# HOME PAGE
+# ============================================================================
+msgid "Welcome"
+msgstr "مرحباً"
+
+msgid "Browse products or view your cart."
+msgstr "تصفح المنتجات أو عرض سلتك."
+
+msgid "Go to Products"
+msgstr "الذهاب إلى المنتجات"
+
+msgid "Latest Products"
+msgstr "أحدث المنتجات"
+
+msgid "See all"
+msgstr "عرض الكل"
+
+msgid "No products yet. Add some from Admin."
+msgstr "لا توجد منتجات بعد. أضف بعضها من لوحة الإدارة."
+
+# ============================================================================
+# CATEGORY MANAGEMENT
+# ============================================================================
+msgid "Categories"
+msgstr "الفئات"
+
+msgid "New"
+msgstr "جديد"
+
+msgid "Name"
+msgstr "الاسم"
+
+msgid "Active"
+msgstr "نشط"
+
+msgid "Yes"
+msgstr "نعم"
+
+msgid "No"
+msgstr "لا"
+
+msgid "No categories yet."
+msgstr "لا توجد فئات بعد."
+
+msgid "New Category"
+msgstr "فئة جديدة"
+
+msgid "Edit Category"
+msgstr "تعديل الفئة"
+
+# ============================================================================
+# SELLER MANAGEMENT
+# ============================================================================
+msgid "User"
+msgstr "المستخدم"
+
+msgid "Seller?"
+msgstr "بائع؟"
+
+msgid "Remove Seller"
+msgstr "إزالة البائع"
+
+msgid "Make Seller"
+msgstr "تعيين كبائع"
+
+# ============================================================================
+# ADMIN PRODUCTS
+# ============================================================================
+msgid "Products Management"
+msgstr "إدارة المنتجات"
+
+msgid "Filter"
+msgstr "تصفية"
+
+msgid "Image"
+msgstr "الصورة"
+
+msgid "Category"
+msgstr "الفئة"
+
+msgid "Owner"
+msgstr "المالك"
+
+msgid "Stock"
+msgstr "المخزون"
+
+msgid "Status"
+msgstr "الحالة"
+
+msgid "Actions"
+msgstr "الإجراءات"
+
+msgid "Inactive"
+msgstr "غير نشط"
+
+msgid "Products pagination"
+msgstr "ترقيم صفحات المنتجات"
+
+# ============================================================================
+# PYTHON CODE - VIEWS MESSAGES
+# ============================================================================
+msgid "Product created successfully."
+msgstr "تم إنشاء المنتج بنجاح."
+
+msgid "Fix the errors below."
+msgstr "أصلح الأخطاء أدناه."
+
+msgid "Product updated successfully."
+msgstr "تم تحديث المنتج بنجاح."
+
+msgid "Product deleted."
+msgstr "تم حذف المنتج."
+
+msgid "Removed Seller role from %(username)s."
+msgstr "تمت إزالة دور البائع من %(username)s."
+
+msgid "Granted Seller role to %(username)s."
+msgstr "تم منح دور البائع لـ %(username)s."
+
+msgid "Category created."
+msgstr "تم إنشاء الفئة."
+
+msgid "Name is required."
+msgstr "الاسم مطلوب."
+
+msgid "Category updated."
+msgstr "تم تحديث الفئة."
+
+msgid "Some items were removed from your cart due to invalid quantities or unavailable products."
+msgstr "تمت إزالة بعض العناصر من سلتك بسبب كميات غير صالحة أو منتجات غير متوفرة."
+
+msgid "%(product_name)s is sold out."
+msgstr "نفدت كمية %(product_name)s."
+
+msgid "Quantity must be greater than zero."
+msgstr "يجب أن تكون الكمية أكبر من الصفر."
+
+msgid "Only %(stock)d left in stock."
+msgstr "المتبقي في المخزون: %(stock)d فقط."
+
+msgid "Added %(product_name)s to cart."
+msgstr "تمت إضافة %(product_name)s إلى السلة."
+
+msgid "Item removed."
+msgstr "تمت إزالة العنصر."
+
+msgid "You cannot purchase your own products. Item removed from cart."
+msgstr "لا يمكنك شراء منتجاتك الخاصة. تمت إزالة العنصر من السلة."
+
+msgid "%(product_name)s is sold out and has been removed from your cart."
+msgstr "نفدت كمية %(product_name)s وتمت إزالتها من سلتك."
+
+msgid "Only %(stock)d left in stock for %(product_name)s. Quantity adjusted."
+msgstr "المتبقي في المخزون لـ %(product_name)s: %(stock)d فقط. تم تعديل الكمية."
+
+msgid "Quantity updated."
+msgstr "تم تحديث الكمية."
+
+msgid "Removed item from cart."
+msgstr "تمت إزالة العنصر من السلة."
+
+msgid "Item not found in cart."
+msgstr "العنصر غير موجود في السلة."
+
+msgid "Your cart was cleared due to invalid items."
+msgstr "تم مسح سلتك بسبب عناصر غير صالحة."
+
+msgid "Your cart is empty."
+msgstr "سلتك فارغة."
+
+msgid "Invalid quantity for product ID %(pid)s."
+msgstr "كمية غير صالحة لمنتج برقم %(pid)s."
+
+msgid "Invalid quantity (must be greater than zero) for product ID %(pid)s."
+msgstr "كمية غير صالحة (يجب أن تكون أكبر من الصفر) لمنتج برقم %(pid)s."
+
+msgid "Product ID %(pid)s is no longer available."
+msgstr "المنتج برقم %(pid)s لم يعد متوفراً."
+
+msgid "You cannot purchase your own product: %(product_name)s."
+msgstr "لا يمكنك شراء منتجك الخاص: %(product_name)s."
+
+msgid "%(product_name)s: Only %(stock)d available, but %(qty)d requested."
+msgstr "%(product_name)s: المتوفر %(stock)d فقط، لكن المطلوب %(qty)d."
+
+msgid "Order #%(order_id)d created successfully!"
+msgstr "تم إنشاء الطلب #%(order_id)d بنجاح!"
+
+msgid "Invalid data in cart: %(error)s"
+msgstr "بيانات غير صالحة في السلة: %(error)s"
+
+msgid "An error occurred during checkout. Please try again. If the problem persists, contact support."
+msgstr "حدث خطأ أثناء الدفع. يرجى المحاولة مرة أخرى. إذا استمرت المشكلة، اتصل بالدعم."
+
+# ============================================================================
+# PYTHON CODE - FORMS
+# ============================================================================
+msgid "Description"
+msgstr "الوصف"
+
+msgid "Image must be <= 2MB."
+msgstr "يجب أن تكون الصورة أقل من أو تساوي 2 ميجابايت."
+
+msgid "File must be an image."
+msgstr "يجب أن يكون الملف صورة."
+
+# ============================================================================
+# PYTHON CODE - MODELS
+# ============================================================================
+msgid "Product"
+msgstr "المنتج"
+
+msgid "Order"
+msgstr "الطلب"
+
+msgid "Orders"
+msgstr "الطلبات"
+
+msgid "Order Item"
+msgstr "عنصر الطلب"
+
+msgid "Order Items"
+msgstr "عناصر الطلب"
+
+msgid "Pending"
+msgstr "قيد الانتظار"
+
+msgid "Paid"
+msgstr "مدفوع"
+
+msgid "Failed"
+msgstr "فشل"
+
+msgid "Created at"
+msgstr "تاريخ الإنشاء"
+
+msgid "Is paid"
+msgstr "تم الدفع"
+
+msgid "Total amount"
+msgstr "المبلغ الإجمالي"
+
+msgid "Quantity"
+msgstr "الكمية"
+
+msgid "Price at purchase"
+msgstr "السعر عند الشراء"

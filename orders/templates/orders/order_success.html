@@ -1,11 +1,12 @@
 {% extends "base.html" %}
-{% block title %}Order Success{% endblock %}
+{% load i18n %}
+{% block title %}{% trans "Order Success" %}{% endblock %}
 
 {% block content %}
-  <h1>Order created ✅</h1>
-  <p>Order ID: <b>#{{ order.pk }}</b></p>
-  <p>Status: <b>{{ order.get_status_display }}</b></p>
-  <p>Total items: {{ order.items.count }}</p>
+  <h1>{% trans "Order created" %} ✅</h1>
+  <p>{% trans "Order ID:" %} <b>#{{ order.pk }}</b></p>
+  <p>{% trans "Status:" %} <b>{{ order.get_status_display }}</b></p>
+  <p>{% trans "Total items:" %} {{ order.items.count }}</p>
 
   <ul>
     {% for item in order.items.all %}
@@ -13,7 +14,7 @@
     {% endfor %}
   </ul>
 
-  <p><b>Total:</b> ${{ order.total }}</p>
+  <p><b>{% trans "Total:" %}</b> ${{ order.total }}</p>
 
-  <a href="{% url 'product_list' %}">Back to products</a>
+  <a href="{% url 'product_list' %}">{% trans "Back to products" %}</a>
 {% endblock %}

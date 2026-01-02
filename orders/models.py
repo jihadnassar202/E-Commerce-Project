@@ -1,6 +1,7 @@
 from decimal import Decimal, ROUND_HALF_UP
 from django.conf import settings
 from django.db import models
+from django.utils.translation import gettext_lazy as _
 from products.models import Product
 
 # Currency precision: 2 decimal places
@@ -12,16 +13,20 @@ class Order(models.Model):
     STATUS_PAID = "paid"
     STATUS_FAILED = "failed"
     STATUS_CHOICES = [
-        (STATUS_PENDING, "Pending"),
-        (STATUS_PAID, "Paid"),
-        (STATUS_FAILED, "Failed"),
+        (STATUS_PENDING, _("Pending")),
+        (STATUS_PAID, _("Paid")),
+        (STATUS_FAILED, _("Failed")),
     ]
 
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="orders")
-    created_at = models.DateTimeField(auto_now_add=True)
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_PENDING)
-    is_paid = models.BooleanField(default=False)
-    total_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="orders", verbose_name=_("User"))
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Created at"))
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_PENDING, verbose_name=_("Status"))
+    is_paid = models.BooleanField(default=False, verbose_name=_("Is paid"))
+    total_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name=_("Total amount"))
+
+    class Meta:
+        verbose_name = _("Order")
+        verbose_name_plural = _("Orders")
 
     def __str__(self):
         return f"Order #{self.pk} - {self.user.username}"
@@ -33,10 +38,14 @@ class Order(models.Model):
 
 
 class OrderItem(models.Model):
-    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="items")
-    product = models.ForeignKey(Product, on_delete=models.PROTECT)
-    quantity = models.PositiveIntegerField(default=1)
-    price_at_purchase = models.DecimalField(max_digits=10, decimal_places=2)
+    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="items", verbose_name=_("Order"))
+    product = models.ForeignKey(Product, on_delete=models.PROTECT, verbose_name=_("Product"))
+    quantity = models.PositiveIntegerField(default=1, verbose_name=_("Quantity"))
+    price_at_purchase = models.DecimalField(max_digits=10, decimal_places=2, verbose_name=_("Price at purchase"))
+
+    class Meta:
+        verbose_name = _("Order Item")
+        verbose_name_plural = _("Order Items")
 
     def __str__(self):
         return f"{self.product.name} x {self.quantity}"

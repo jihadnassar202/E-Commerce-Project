@@ -114,7 +114,7 @@ LANGUAGE_CODE = 'en-us'
 
 LANGUAGES = [
     ('en', 'English'),
-    ('ar', 'Arabic'),
+    ('ar', 'العربية'),
 ]
 
 LOCALE_PATHS = [

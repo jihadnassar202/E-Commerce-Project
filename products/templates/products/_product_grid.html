@@ -1,3 +1,4 @@
+{% load i18n %}
 <div class="row" id="product-grid">
   {% for p in page_obj %}
     <div class="col-6 col-md-3 mb-4">
@@ -10,7 +11,7 @@
           {% else %}
             <div class="card-img-top bg-light d-flex align-items-center justify-content-center"
                  style="height: 200px;">
-              <span class="text-muted">No Image</span>
+              <span class="text-muted">{% trans "No Image" %}</span>
             </div>
           {% endif %}
         </a>
@@ -33,7 +34,7 @@
                      {% if p.stock == 0 %}disabled{% endif %}>
               <button type="submit" class="btn btn-success btn-sm flex-fill"
                       {% if p.stock == 0 %}disabled{% endif %}>
-                {% if p.stock == 0 %}Sold Out{% else %}Add{% endif %}
+                {% if p.stock == 0 %}{% trans "Sold Out" %}{% else %}{% trans "Add" %}{% endif %}
               </button>
             </div>
             <span class="cart-add-message" style="font-size: 0.75rem; display: block; margin-top: 0.25rem;"></span>
@@ -44,7 +45,7 @@
     </div>
   {% empty %}
     <div class="col-12">
-      <p class="text-center text-muted">No products found.</p>
+      <p class="text-center text-muted">{% trans "No products found." %}</p>
     </div>
   {% endfor %}
 </div>

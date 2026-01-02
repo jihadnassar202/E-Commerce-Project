@@ -3,6 +3,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
 from django.contrib import messages
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils.translation import gettext_lazy as _
 
 from core.utils import SELLER_GROUP_NAME, is_seller
 from products.models import Category, Product
@@ -30,10 +31,10 @@ def manage_sellers(request):
 
         if user.groups.filter(id=seller_group.id).exists():
             user.groups.remove(seller_group)
-            messages.success(request, f"Removed Seller role from {user.username}.")
+            messages.success(request, _("Removed Seller role from %(username)s.") % {'username': user.username})
         else:
             user.groups.add(seller_group)
-            messages.success(request, f"Granted Seller role to {user.username}.")
+            messages.success(request, _("Granted Seller role to %(username)s.") % {'username': user.username})
 
         return redirect("manage_sellers")
 
@@ -63,9 +64,9 @@ def category_create(request):
         is_active = request.POST.get("is_active") == "on"
         if name:
             Category.objects.create(name=name, is_active=is_active)
-            messages.success(request, "Category created.")
+            messages.success(request, _("Category created."))
             return redirect("category_list")
-        messages.error(request, "Name is required.")
+        messages.error(request, _("Name is required."))
     return render(request, "core/category_form.html", {"mode": "create"})
 
 
@@ -79,9 +80,9 @@ def category_update(request, pk):
             category.name = name
             category.is_active = is_active
             category.save()
-            messages.success(request, "Category updated.")
+            messages.success(request, _("Category updated."))
             return redirect("category_list")
-        messages.error(request, "Name is required.")
+        messages.error(request, _("Name is required."))
     return render(
         request,
         "core/category_form.html",
