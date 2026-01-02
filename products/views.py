@@ -99,12 +99,7 @@ def product_list_api(request):
 
 def product_detail(request, pk):
     product = get_object_or_404(Product, pk=pk, is_active=True)
-    # Check if user owns this product (for UI display)
-    is_owner = request.user.is_authenticated and product.owner == request.user
-    return render(request, "products/product_detail.html", {
-        "product": product,
-        "is_owner": is_owner
-    })
+    return render(request, "products/product_detail.html", {"product": product})
 
 
 @login_required

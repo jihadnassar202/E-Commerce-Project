@@ -51,12 +51,8 @@
   </div>
 </form>
 
-<div id="product-grid-container">
-  {% include "products/_product_grid.html" %}
-</div>
-<div id="pagination-container">
-  {% include "products/_pagination.html" %}
-</div>
+{% include "products/_product_grid.html" %}
+{% include "products/_pagination.html" %}
 
 <script>
   (function () {
@@ -65,71 +61,24 @@
     const sortSelect = document.getElementById("sort-select");
     const searchInput = document.getElementById("search-input");
     const clearBtn = document.getElementById("clear-filters");
-    const productGridContainer = document.getElementById("product-grid-container");
-    const paginationContainer = document.getElementById("pagination-container");
-
-    // Function to fetch products via API
-    function fetchProducts() {
-      const params = new URLSearchParams();
-      const q = searchInput ? searchInput.value.trim() : "";
-      const category = categorySelect ? categorySelect.value : "";
-      const sort = sortSelect ? sortSelect.value : "newest";
-      const mine = "{{ mine|default:'' }}";
-
-      if (q) params.set("q", q);
-      if (category) params.set("category", category);
-      if (sort) params.set("sort", sort);
-      if (mine === "1") params.set("mine", "1");
-
-      const apiUrl = "{% url 'product_list_api' %}?" + params.toString();
-
-      fetch(apiUrl, {
-        headers: {
-          "X-Requested-With": "XMLHttpRequest"
-        }
-      })
-        .then(response => response.json())
-        .then(data => {
-          if (productGridContainer) productGridContainer.innerHTML = data.html;
-          if (paginationContainer) paginationContainer.innerHTML = data.pagination;
-          
-          // Re-initialize cart add forms after updating HTML
-          initializeCartForms();
-          
-          // Update URL without page reload
-          const newUrl = window.location.pathname + (params.toString() ? "?" + params.toString() : "");
-          window.history.pushState({}, "", newUrl);
-        })
-        .catch(error => {
-          console.error("Error fetching products:", error);
-        });
-    }
-
-    // Use global debouncer from base.html
-    const debouncedFetchProducts = window.createDebouncer ? 
-      window.createDebouncer(fetchProducts, 400) : fetchProducts;
 
     if (categorySelect) {
       categorySelect.addEventListener("change", function () {
-        fetchProducts();
+        form.submit();
       });
     }
 
     if (sortSelect) {
       sortSelect.addEventListener("change", function () {
-        fetchProducts();
+        form.submit();
       });
     }
 
     if (searchInput) {
-      // Search-as-you-type with debouncer (no Enter required)
-      searchInput.addEventListener("input", debouncedFetchProducts);
-      
-      // Keep Enter key for form submission as fallback
       searchInput.addEventListener("keypress", function (e) {
         if (e.key === "Enter") {
           e.preventDefault();
-          fetchProducts();
+          form.submit();
         }
       });
     }
@@ -139,31 +88,43 @@
         if (searchInput) searchInput.value = "";
         if (categorySelect) categorySelect.value = "";
         if (sortSelect) sortSelect.value = "newest";
-        
-        fetchProducts();
+
+        const url = new URL(window.location.href);
+        url.searchParams.delete("q");
+        url.searchParams.delete("category");
+        url.searchParams.delete("sort");
+        url.searchParams.delete("page");
+
+        const mineParam = "{{ mine|default:'' }}";
+        if (mineParam === "1") {
+          url.searchParams.set("mine", "1");
+        }
+
+        window.location.href = url.toString();
       });
     }
+  })();
 
-    // Initialize cart forms (called after dynamic content updates)
-    function initializeCartForms() {
-      const forms = document.querySelectorAll('.cart-add-form');
-      
-      forms.forEach(function(form) {
-        form.addEventListener('submit', function (e) {
-          e.preventDefault();
+  // AJAX cart add functionality
+  document.addEventListener('DOMContentLoaded', function () {
+    const forms = document.querySelectorAll('.cart-add-form');
+    
+    forms.forEach(function(form) {
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
 
-          const button = form.querySelector('button[type="submit"]');
-          const messageSpan = form.querySelector('.cart-add-message');
-          const originalText = button.textContent.trim();
+        const button = form.querySelector('button[type="submit"]');
+        const messageSpan = form.querySelector('.cart-add-message');
+        const originalText = button.textContent.trim();
 
-          // Disable button and show loading
-          button.disabled = true;
-          button.textContent = 'Adding...';
-          messageSpan.textContent = '';
-          messageSpan.className = 'cart-add-message';
+        // Disable button and show loading
+        button.disabled = true;
+        button.textContent = 'Adding...';
+        messageSpan.textContent = '';
+        messageSpan.className = 'cart-add-message';
 
-          const formData = new FormData(form);
-          const url = form.getAttribute('action');
+        const formData = new FormData(form);
+        const url = form.getAttribute('action');
 
         fetch(url, {
           method: 'POST',
@@ -198,9 +159,8 @@
             messageSpan.textContent = 'An error occurred. Please try again.';
             messageSpan.className = 'cart-add-message text-danger';
           });
-        });
       });
-    }
+    });
 
     function updateCartCount(count) {
       const cartBadge = document.querySelector('.badge.bg-danger');
@@ -224,11 +184,6 @@
         }
       }
     }
-
-    // Initialize on page load
-    document.addEventListener('DOMContentLoaded', function () {
-      initializeCartForms();
-    });
-  })();
+  });
 </script>
 {% endblock %}
