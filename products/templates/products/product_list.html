@@ -75,12 +75,58 @@
     }
 
     if (searchInput) {
-      searchInput.addEventListener("keypress", function (e) {
-        if (e.key === "Enter") {
-          e.preventDefault();
-          form.submit();
+      // Search-as-you-type with debouncer
+      const performSearch = function() {
+        const params = new URLSearchParams();
+        const searchValue = searchInput.value.trim();
+        if (searchValue) {
+          params.set('q', searchValue);
         }
-      });
+        if (categorySelect && categorySelect.value) {
+          params.set('category', categorySelect.value);
+        }
+        if (sortSelect && sortSelect.value) {
+          params.set('sort', sortSelect.value);
+        }
+        {% if mine == "1" %}
+        params.set('mine', '1');
+        {% endif %}
+
+        fetch("{% url 'product_list_api' %}?" + params.toString(), {
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+          }
+        })
+          .then(response => response.json())
+          .then(data => {
+            const productGrid = document.getElementById('product-grid');
+            const paginationNav = document.querySelector('nav[aria-label="Products pagination"]');
+            if (productGrid && data.html) {
+              productGrid.outerHTML = data.html;
+            }
+            if (paginationNav && data.pagination) {
+              paginationNav.outerHTML = data.pagination;
+            } else if (!paginationNav && data.pagination) {
+              // Pagination doesn't exist, insert it after product grid
+              const gridContainer = document.getElementById('product-grid').parentElement;
+              if (gridContainer) {
+                gridContainer.insertAdjacentHTML('afterend', data.pagination);
+              }
+            } else if (paginationNav && !data.pagination) {
+              // No pagination in response, remove it
+              paginationNav.remove();
+            }
+            // Update URL without page reload
+            const newUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
+            window.history.pushState({}, '', newUrl);
+          })
+          .catch(error => {
+            console.error('Search error:', error);
+          });
+      };
+
+      const debouncedSearch = debounce(performSearch, 400);
+      searchInput.addEventListener("input", debouncedSearch);
     }
 
     if (clearBtn) {
