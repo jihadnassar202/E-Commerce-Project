@@ -27,11 +27,17 @@
 
     <p class="mt-3">{{ product.description }}</p>
 
+    {% if is_owner %}
+    <div class="alert alert-info mt-3" role="alert">
+      <strong>This is your product.</strong> You cannot add your own products to the cart or purchase them.
+    </div>
+    {% endif %}
+
     <form method="post" action="{% url 'cart_add' product.id %}" class="mt-3 cart-add-form"
       data-product-id="{{ product.id }}">
       {% csrf_token %}
-      <button type="submit" class="btn btn-success" {% if product.stock == 0 %}disabled{% endif %}>
-        {% if product.stock == 0 %}Sold out{% else %}Add to cart{% endif %}
+      <button type="submit" class="btn btn-success" {% if product.stock==0 or is_owner %}disabled{% endif %}>
+        {% if product.stock == 0 %}Sold out{% elif is_owner %}Your product{% else %}Add to cart{% endif %}
       </button>
       <span class="cart-add-message ms-2"></span>
     </form>
