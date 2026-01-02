@@ -208,6 +208,16 @@
   </main>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script>
+    // Global debouncer utility - single source of truth
+    // Usage: const debouncedFunction = debounce(callback, delay);
+    function debounce(func, delay) {
+      let timeoutId;
+      return function (...args) {
+        clearTimeout(timeoutId);
+        timeoutId = setTimeout(() => func.apply(this, args), delay);
+      };
+    }
+
     const navbarForm = document.getElementById('navbar-search-form');
     if (navbarForm) {
       navbarForm.addEventListener('submit', function (e) {
