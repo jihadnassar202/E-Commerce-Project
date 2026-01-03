@@ -644,3 +644,28 @@ def orders_list(request):
     paginator = Paginator(orders, 15)
     page_obj = paginator.get_page(request.GET.get("page"))
     return render(request, "orders/orders_list.html", {"page_obj": page_obj, "is_seller_view": is_seller(request.user) and not request.user.is_staff})
+
+
+@login_required
+@require_POST
+def order_item_update_status(request, item_id):
+    """Update order item status. Sellers can only update items for their own products."""
+    item = get_object_or_404(OrderItem, pk=item_id)
+    
+    # Permission check: sellers can only update items for their own products, admins can update any
+    if not request.user.is_staff:
+        if not is_seller(request.user) or item.product.owner != request.user:
+            messages.error(request, _("You don't have permission to update this item."))
+            return redirect("orders_list")
+    
+    new_status = request.POST.get("status")
+    valid_statuses = [choice[0] for choice in OrderItem.STATUS_CHOICES]
+    
+    if new_status not in valid_statuses:
+        messages.error(request, _("Invalid status."))
+        return redirect("orders_list")
+    
+    item.status = new_status
+    item.save()
+    messages.success(request, _("Order item status updated."))
+    return redirect("orders_list")
