@@ -1,6 +1,6 @@
 from django import forms
 from django.utils.translation import gettext_lazy as _
-from .models import Product
+from .models import Product, Category
 
 class ProductForm(forms.ModelForm):
     class Meta:
@@ -33,7 +33,21 @@ class ProductForm(forms.ModelForm):
         if hasattr(img, 'content_type'):
             if img.size > 2 * 1024 * 1024:
                 raise forms.ValidationError(_("Image must be <= 2MB."))
-            if not img.content_type.startswith("image/"):
-                raise forms.ValidationError(_("File must be an image."))
+        if not img.content_type.startswith("image/"):
+            raise forms.ValidationError(_("File must be an image."))
         
         return img
+
+
+class CategoryForm(forms.ModelForm):
+    class Meta:
+        model = Category
+        fields = ["name", "is_active"]
+        widgets = {
+            "name": forms.TextInput(attrs={"class": "form-control", "required": True}),
+            "is_active": forms.CheckboxInput(attrs={"class": "form-check-input"}),
+        }
+        labels = {
+            "name": _("Name"),
+            "is_active": _("Active"),
+        }

@@ -20,8 +20,10 @@ venv/
 # Django
 db.sqlite3
 media/
-
 # IDE
 .vscode/
 .idea/
 *.swp
+
+TASK3_ANALYSIS_AND_PLAN.md
+REQUIREMENTS_REVIEW.md
