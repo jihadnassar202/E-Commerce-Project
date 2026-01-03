@@ -175,6 +175,14 @@ def _calculate_cart_total(cart):
 
 
 def cart_detail(request):
+    # Check if cart has expired
+    if _is_cart_expired(request.session):
+        request.session["cart"] = {}
+        request.session["cart_created_at"] = timezone.now().isoformat()
+        request.session.modified = True
+        messages.warning(request, _("Your cart has expired and has been cleared. Items are reserved for 24 hours."))
+        return redirect("product_list")
+    
     # Validate and clean cart to remove invalid states
     cleaned_cart, removed_items = _validate_and_clean_cart(request.session)
 
@@ -205,6 +213,12 @@ def cart_detail(request):
 
 @require_POST
 def cart_add(request, product_id):
+    # Check if cart has expired, reset if so
+    if _is_cart_expired(request.session):
+        request.session["cart"] = {}
+        request.session["cart_created_at"] = timezone.now().isoformat()
+        request.session.modified = True
+    
     product = get_object_or_404(Product, pk=product_id, is_active=True)
 
     # Ownership validation: prevent sellers from purchasing their own products
@@ -489,6 +503,14 @@ def cart_decrement(request, product_id):
 
 @login_required
 def checkout(request):
+    # Check if cart has expired
+    if _is_cart_expired(request.session):
+        request.session["cart"] = {}
+        request.session["cart_created_at"] = timezone.now().isoformat()
+        request.session.modified = True
+        messages.warning(request, _("Your cart has expired and has been cleared. Items are reserved for 24 hours."))
+        return redirect("cart_detail")
+    
     # Validate and clean cart before checkout
     cleaned_cart, removed_items = _validate_and_clean_cart(request.session)
 
