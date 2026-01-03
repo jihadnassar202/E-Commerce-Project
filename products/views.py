@@ -11,7 +11,7 @@ from django.views.decorators.http import require_POST
 from django.utils.translation import gettext_lazy as _
 from core.utils import is_seller
 from .decorators import seller_required
-from .forms import ProductForm
+from .forms import ProductForm, CategoryForm
 from .models import Category, Product
 
 
@@ -201,3 +201,12 @@ def product_list_admin(request):
             "mine": mine,
         },
     )
+
+
+@staff_member_required
+def category_list(request):
+    """Admin-only category list."""
+    categories = Category.objects.all().order_by("name")
+    paginator = Paginator(categories, 20)
+    page_obj = paginator.get_page(request.GET.get("page"))
+    return render(request, "products/category_list.html", {"page_obj": page_obj})
