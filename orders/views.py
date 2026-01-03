@@ -1,4 +1,5 @@
 from decimal import Decimal, ROUND_HALF_UP
+from datetime import datetime, timedelta
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
@@ -8,6 +9,7 @@ from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 from django.utils.translation import gettext_lazy as _
+from django.utils import timezone
 
 from products.models import Product
 from core.utils import is_seller
@@ -15,6 +17,9 @@ from .models import Order, OrderItem
 
 # Currency precision: 2 decimal places
 CURRENCY_PRECISION = Decimal("0.01")
+
+# Cart expiry: 24 hours
+CART_EXPIRY_HOURS = 24
 
 
 def _quantize_currency(value):
@@ -28,13 +33,33 @@ def _get_cart(session):
     """
     Cart stored in session as:
     session["cart"] = { "<product_id>": <qty>, ... }
+    session["cart_created_at"] = timestamp
     product_id keys are ALWAYS strings.
     """
     cart = session.get("cart")
     if cart is None:
         cart = {}
         session["cart"] = cart
+        session["cart_created_at"] = timezone.now().isoformat()
+    elif "cart_created_at" not in session:
+        # Initialize timestamp for existing carts
+        session["cart_created_at"] = timezone.now().isoformat()
     return cart
+
+
+def _is_cart_expired(session):
+    """Check if cart has expired (24 hours)."""
+    cart_created_at_str = session.get("cart_created_at")
+    if not cart_created_at_str:
+        return False
+    try:
+        cart_created_at = datetime.fromisoformat(cart_created_at_str)
+        if timezone.is_naive(cart_created_at):
+            cart_created_at = timezone.make_aware(cart_created_at)
+        expiry_time = cart_created_at + timedelta(hours=CART_EXPIRY_HOURS)
+        return timezone.now() > expiry_time
+    except (ValueError, TypeError):
+        return False
 
 
 def _validate_and_clean_cart(session):
