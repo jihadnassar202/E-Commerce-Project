@@ -10,6 +10,7 @@ from django.views.decorators.http import require_POST
 from django.utils.translation import gettext_lazy as _
 
 from products.models import Product
+from core.utils import is_seller
 from .models import Order, OrderItem
 
 # Currency precision: 2 decimal places
@@ -623,3 +624,23 @@ def order_detail(request, order_id):
         user=request.user,
     )
     return render(request, "orders/order_detail.html", {"order": order})
+
+
+@login_required
+def orders_list(request):
+    """Orders list view: sellers see their items, admins see all orders."""
+    if is_seller(request.user) and not request.user.is_staff:
+        # Seller view: show orders containing their products
+        orders = Order.objects.filter(
+            items__product__owner=request.user
+        ).distinct().prefetch_related("items__product", "items__product__owner", "user").order_by("-created_at")
+    elif request.user.is_staff:
+        # Admin view: show all orders
+        orders = Order.objects.all().prefetch_related("items__product", "items__product__owner", "user").order_by("-created_at")
+    else:
+        # Regular user: redirect to my_orders
+        return redirect("my_orders")
+    
+    paginator = Paginator(orders, 15)
+    page_obj = paginator.get_page(request.GET.get("page"))
+    return render(request, "orders/orders_list.html", {"page_obj": page_obj, "is_seller_view": is_seller(request.user) and not request.user.is_staff})
