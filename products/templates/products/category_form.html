@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block title %}{% if mode == "create" %}{% trans "New Category" %}{% else %}{% trans "Edit Category" %}{% endif %}{% endblock %}
+
+{% block content %}
+<h1>{% if mode == "create" %}{% trans "New Category" %}{% else %}{% trans "Edit Category" %}{% endif %}</h1>
+
+<form method="post" class="card card-body shadow-sm">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <div class="d-flex gap-2">
+    <button type="submit" class="btn btn-primary">
+      {% if mode == "create" %}{% trans "Create" %}{% else %}{% trans "Save" %}{% endif %}
+    </button>
+    <a class="btn btn-outline-secondary" href="{% url 'category_list' %}">{% trans "Cancel" %}</a>
+  </div>
+</form>
+{% endblock %}
+

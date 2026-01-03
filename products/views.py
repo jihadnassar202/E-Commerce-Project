@@ -210,3 +210,45 @@ def category_list(request):
     paginator = Paginator(categories, 20)
     page_obj = paginator.get_page(request.GET.get("page"))
     return render(request, "products/category_list.html", {"page_obj": page_obj})
+
+
+@staff_member_required
+def category_create(request):
+    """Admin-only category creation."""
+    if request.method == "POST":
+        form = CategoryForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, _("Category created."))
+            return redirect("category_list")
+        messages.error(request, _("Name is required."))
+    else:
+        form = CategoryForm()
+    return render(request, "products/category_form.html", {"form": form, "mode": "create"})
+
+
+@staff_member_required
+def category_update(request, pk):
+    """Admin-only category update."""
+    category = get_object_or_404(Category, pk=pk)
+    if request.method == "POST":
+        form = CategoryForm(request.POST, instance=category)
+        if form.is_valid():
+            form.save()
+            messages.success(request, _("Category updated."))
+            return redirect("category_list")
+        messages.error(request, _("Fix the errors below."))
+    else:
+        form = CategoryForm(instance=category)
+    return render(request, "products/category_form.html", {"form": form, "mode": "update", "category": category})
+
+
+@staff_member_required
+@require_POST
+def category_deactivate(request, pk):
+    """Admin-only category deactivation (soft delete via is_active=False)."""
+    category = get_object_or_404(Category, pk=pk)
+    category.is_active = False
+    category.save()
+    messages.success(request, _("Category deactivated."))
+    return redirect("category_list")

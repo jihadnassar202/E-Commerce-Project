@@ -38,10 +38,24 @@ class Order(models.Model):
 
 
 class OrderItem(models.Model):
+    STATUS_PENDING = "pending"
+    STATUS_PROCESSING = "processing"
+    STATUS_SHIPPED = "shipped"
+    STATUS_DELIVERED = "delivered"
+    STATUS_CANCELLED = "cancelled"
+    STATUS_CHOICES = [
+        (STATUS_PENDING, _("Pending")),
+        (STATUS_PROCESSING, _("Processing")),
+        (STATUS_SHIPPED, _("Shipped")),
+        (STATUS_DELIVERED, _("Delivered")),
+        (STATUS_CANCELLED, _("Cancelled")),
+    ]
+
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name="items", verbose_name=_("Order"))
     product = models.ForeignKey(Product, on_delete=models.PROTECT, verbose_name=_("Product"))
     quantity = models.PositiveIntegerField(default=1, verbose_name=_("Quantity"))
     price_at_purchase = models.DecimalField(max_digits=10, decimal_places=2, verbose_name=_("Price at purchase"))
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default=STATUS_PENDING, verbose_name=_("Status"))
 
     class Meta:
         verbose_name = _("Order Item")
