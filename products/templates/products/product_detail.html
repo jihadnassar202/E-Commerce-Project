@@ -153,20 +153,22 @@
     }
 
     function updateCartCount(count) {
-      const cartBadge = document.querySelector('.badge.bg-danger');
-      const cartLink = document.querySelector('a[href*="cart"]');
+      const cartLink = document.querySelector('.cart-icon-link');
+      if (!cartLink) return;
+
+      let cartBadge = cartLink.querySelector('.badge.bg-danger');
 
       if (count > 0) {
         if (cartBadge) {
           cartBadge.textContent = count;
           cartBadge.style.display = '';
-        } else if (cartLink) {
+        } else {
           // Create badge if it doesn't exist
-          const badge = document.createElement('span');
-          badge.className = 'position-absolute top-0 start-100 translate-middle badge rounded-circle bg-danger';
-          badge.style.cssText = 'font-size: 0.7em; min-width: 1.2em; height: 1.2em; padding: 0.15em 0.3em; line-height: 1; margin-left: -0.5rem;';
-          badge.textContent = count;
-          cartLink.appendChild(badge);
+          cartBadge = document.createElement('span');
+          cartBadge.className = 'position-absolute top-0 start-50 translate-middle badge rounded-circle bg-danger';
+          cartBadge.style.cssText = 'font-size: 0.7em; min-width: 1.2em; height: 1.2em; padding: 0.15em 0.3em; line-height: 1;';
+          cartBadge.textContent = count;
+          cartLink.appendChild(cartBadge);
         }
       } else {
         if (cartBadge) {

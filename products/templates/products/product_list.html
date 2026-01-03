@@ -3,27 +3,35 @@
 {% block title %}{% trans "Products" %}{% endblock %}
 
 {% block content %}
-<div
-  class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-3 mb-md-4 gap-2">
+<div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mb-3 mb-md-4 gap-2">
   <h1 class="m-0">{% trans "Products" %}</h1>
   {% if perms.products.add_product %}
-  <a class="btn btn-primary" href="{% url 'product_create' %}">+ {% trans "Add Product" %}</a>
+    <a class="btn btn-primary" href="{% url 'product_create' %}">+ {% trans "Add Product" %}</a>
   {% endif %}
 </div>
 
 {% if mine == "1" %}
-<div class="alert alert-info">
-  <strong>{% trans "My Products:" %}</strong> {% trans "Showing only products you own." %} <a href="{% url 'product_list' %}"
-    class="alert-link">{% trans "View all products" %}</a>
-</div>
+  <div class="alert alert-info">
+    <strong>{% trans "My Products:" %}</strong>
+    {% trans "Showing only products you own." %}
+    <a href="{% url 'product_list' %}" class="alert-link">{% trans "View all products" %}</a>
+  </div>
 {% endif %}
 
 <form id="filters-form" method="get" class="row g-2 mb-4">
   {% if mine == "1" %}
-  <input type="hidden" name="mine" value="1">
+    <input type="hidden" name="mine" value="1">
   {% endif %}
+
   <div class="col-12 col-md-5">
-    <input class="form-control" type="text" name="q" id="search-input" placeholder="{% trans 'Search...' %}" value="{{ q }}">
+    <input
+      class="form-control"
+      type="text"
+      name="q"
+      id="search-input"
+      placeholder="{% trans 'Search...' %}"
+      value="{{ q }}"
+    >
   </div>
 
   <div class="col-12 col-md-3">
@@ -52,11 +60,19 @@
   </div>
 </form>
 
+{# Grid ONLY #}
 {% include "products/_product_grid.html" %}
-{% include "products/_pagination.html" %}
+
+{# ✅ Pagination container ثابت: يمنع duplication نهائياً #}
+<div id="pagination-container">
+  {% include "products/_pagination.html" %}
+</div>
 
 <script>
-  (function () {
+  // Set mine parameter from template
+  const isMineFilter = "{{ mine|default:'' }}" === "1";
+
+  document.addEventListener('DOMContentLoaded', function () {
     const form = document.getElementById("filters-form");
     const categorySelect = document.getElementById("category-select");
     const sortSelect = document.getElementById("sort-select");
@@ -76,58 +92,50 @@
     }
 
     if (searchInput) {
-      // Search-as-you-type with debouncer
-      const performSearch = function() {
+      const performSearch = function () {
         const params = new URLSearchParams();
         const searchValue = searchInput.value.trim();
-        if (searchValue) {
-          params.set('q', searchValue);
-        }
-        if (categorySelect && categorySelect.value) {
-          params.set('category', categorySelect.value);
-        }
-        if (sortSelect && sortSelect.value) {
-          params.set('sort', sortSelect.value);
-        }
-        {% if mine == "1" %}
-        params.set('mine', '1');
-        {% endif %}
+
+        if (searchValue) params.set('q', searchValue);
+        if (categorySelect && categorySelect.value) params.set('category', categorySelect.value);
+        if (sortSelect && sortSelect.value) params.set('sort', sortSelect.value);
+        if (isMineFilter) params.set('mine', '1');
+
 
         fetch("{% url 'product_list_api' %}?" + params.toString(), {
-          headers: {
-            'X-Requested-With': 'XMLHttpRequest'
-          }
+          headers: { 'X-Requested-With': 'XMLHttpRequest' }
         })
-          .then(response => response.json())
-          .then(data => {
-            const productGrid = document.getElementById('product-grid');
-            const paginationNav = document.querySelector('nav[aria-label="Products pagination"]');
-            if (productGrid && data.html) {
-              productGrid.outerHTML = data.html;
-            }
-            if (paginationNav && data.pagination) {
-              paginationNav.outerHTML = data.pagination;
-            } else if (!paginationNav && data.pagination) {
-              // Pagination doesn't exist, insert it after product grid
-              const gridContainer = document.getElementById('product-grid').parentElement;
-              if (gridContainer) {
-                gridContainer.insertAdjacentHTML('afterend', data.pagination);
-              }
-            } else if (paginationNav && !data.pagination) {
-              // No pagination in response, remove it
-              paginationNav.remove();
-            }
-            // Update URL without page reload
-            const newUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
-            window.history.pushState({}, '', newUrl);
-          })
-          .catch(error => {
-            console.error('Search error:', error);
-          });
+        .then(response => response.json())
+        .then(data => {
+          // 1) Replace product grid
+          const productGrid = document.getElementById('product-grid');
+          if (productGrid && data.html) {
+            productGrid.outerHTML = data.html;
+          }
+
+          // 2) Replace pagination safely (NO duplicates)
+          const paginationContainer = document.getElementById('pagination-container');
+          if (paginationContainer) {
+            paginationContainer.innerHTML = data.pagination || '';
+          }
+
+          // 3) Update URL without reload
+          const newUrl = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
+          window.history.pushState({}, '', newUrl);
+        })
+        .catch(error => console.error('Search error:', error));
       };
 
-      const debouncedSearch = debounce(performSearch, 400);
-      searchInput.addEventListener("input", debouncedSearch);
+      if (typeof debounce === 'function') {
+        const debouncedSearch = debounce(performSearch, 400);
+        searchInput.addEventListener("input", debouncedSearch);
+      } else {
+        let searchTimeout;
+        searchInput.addEventListener("input", function () {
+          clearTimeout(searchTimeout);
+          searchTimeout = setTimeout(performSearch, 400);
+        });
+      }
     }
 
     if (clearBtn) {
@@ -150,13 +158,13 @@
         window.location.href = url.toString();
       });
     }
-  })();
+  });
 
   // AJAX cart add functionality
   document.addEventListener('DOMContentLoaded', function () {
     const forms = document.querySelectorAll('.cart-add-form');
-    
-    forms.forEach(function(form) {
+
+    forms.forEach(function (form) {
       form.addEventListener('submit', function (e) {
         e.preventDefault();
 
@@ -164,7 +172,6 @@
         const messageSpan = form.querySelector('.cart-add-message');
         const originalText = button.textContent.trim();
 
-        // Disable button and show loading
         button.disabled = true;
         button.textContent = '{% trans "Adding..." %}';
         messageSpan.textContent = '';
@@ -176,59 +183,56 @@
         fetch(url, {
           method: 'POST',
           body: formData,
-          headers: {
-            'X-Requested-With': 'XMLHttpRequest'
+          headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            button.textContent = '{% trans "Added" %}';
+            button.classList.remove('btn-success');
+            button.classList.add('btn-secondary');
+            button.disabled = false;
+
+            messageSpan.textContent = data.message;
+            messageSpan.className = 'cart-add-message text-success';
+
+            updateCartCount(data.cart_count);
+          } else {
+            button.textContent = originalText;
+            messageSpan.textContent = data.message;
+            messageSpan.className = 'cart-add-message text-danger';
+            button.disabled = false;
           }
         })
-          .then(response => response.json())
-          .then(data => {
-            if (data.success) {
-              button.textContent = '{% trans "Added" %}';
-              button.classList.remove('btn-success');
-              button.classList.add('btn-secondary');
-              button.disabled = false;
-              messageSpan.textContent = data.message;
-              messageSpan.className = 'cart-add-message text-success';
-
-              // Update cart count in navbar
-              updateCartCount(data.cart_count);
-            } else {
-              button.textContent = originalText;
-              messageSpan.textContent = data.message;
-              messageSpan.className = 'cart-add-message text-danger';
-              button.disabled = false;
-            }
-          })
-          .catch(error => {
-            console.error('Error:', error);
-            button.textContent = originalText;
-            button.disabled = false;
-            messageSpan.textContent = '{% trans "An error occurred. Please try again." %}';
-            messageSpan.className = 'cart-add-message text-danger';
-          });
+        .catch(error => {
+          console.error('Error:', error);
+          button.textContent = originalText;
+          button.disabled = false;
+          messageSpan.textContent = '{% trans "An error occurred. Please try again." %}';
+          messageSpan.className = 'cart-add-message text-danger';
+        });
       });
     });
 
     function updateCartCount(count) {
-      const cartBadge = document.querySelector('.badge.bg-danger');
-      const cartLink = document.querySelector('a[href*="cart"]');
+      const cartLink = document.querySelector('.cart-icon-link');
+      if (!cartLink) return;
+
+      let cartBadge = cartLink.querySelector('.badge.bg-danger');
 
       if (count > 0) {
         if (cartBadge) {
           cartBadge.textContent = count;
           cartBadge.style.display = '';
-        } else if (cartLink) {
-          // Create badge if it doesn't exist
-          const badge = document.createElement('span');
-          badge.className = 'position-absolute top-0 start-100 translate-middle badge rounded-circle bg-danger';
-          badge.style.cssText = 'font-size: 0.7em; min-width: 1.2em; height: 1.2em; padding: 0.15em 0.3em; line-height: 1; margin-left: -0.5rem;';
-          badge.textContent = count;
-          cartLink.appendChild(badge);
+        } else {
+          cartBadge = document.createElement('span');
+          cartBadge.className = 'position-absolute top-0 start-50 translate-middle badge rounded-circle bg-danger';
+          cartBadge.style.cssText = 'font-size: 0.7em; min-width: 1.2em; height: 1.2em; padding: 0.15em 0.3em; line-height: 1;';
+          cartBadge.textContent = count;
+          cartLink.appendChild(cartBadge);
         }
       } else {
-        if (cartBadge) {
-          cartBadge.style.display = 'none';
-        }
+        if (cartBadge) cartBadge.style.display = 'none';
       }
     }
   });

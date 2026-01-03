@@ -70,6 +70,25 @@
   </div>
 </div>
 
+<!-- Bootstrap Modal for Delete Confirmation -->
+<div class="modal fade" id="deleteCartItemModal" tabindex="-1" aria-labelledby="deleteCartItemModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="deleteCartItemModalLabel">{% trans "Remove Item" %}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="{% trans 'Close' %}"></button>
+      </div>
+      <div class="modal-body">
+        <p>{% trans "Are you sure you want to remove this item from your cart?" %}</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Cancel" %}</button>
+        <button type="button" class="btn btn-danger" id="confirmDeleteBtn">{% trans "Remove" %}</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
   // Get current language prefix from URL
@@ -85,19 +104,22 @@ document.addEventListener('DOMContentLoaded', function() {
   
   // Helper function to update cart count in navbar
   function updateCartCount(count) {
-    const cartBadge = document.querySelector('.badge.bg-danger');
-    const cartLink = document.querySelector('a[href*="cart"]');
-    
+    const cartLink = document.querySelector('.cart-icon-link');
+    if (!cartLink) return;
+
+    let cartBadge = cartLink.querySelector('.badge.bg-danger');
+
     if (count > 0) {
       if (cartBadge) {
         cartBadge.textContent = count;
         cartBadge.style.display = '';
-      } else if (cartLink) {
-        const badge = document.createElement('span');
-        badge.className = 'position-absolute top-0 start-100 translate-middle badge rounded-circle bg-danger';
-        badge.style.cssText = 'font-size: 0.7em; min-width: 1.2em; height: 1.2em; padding: 0.15em 0.3em; line-height: 1; margin-left: -0.5rem;';
-        badge.textContent = count;
-        cartLink.appendChild(badge);
+      } else {
+        // Create badge if it doesn't exist
+        cartBadge = document.createElement('span');
+        cartBadge.className = 'position-absolute top-0 start-50 translate-middle badge rounded-circle bg-danger';
+        cartBadge.style.cssText = 'font-size: 0.7em; min-width: 1.2em; height: 1.2em; padding: 0.15em 0.3em; line-height: 1;';
+        cartBadge.textContent = count;
+        cartLink.appendChild(cartBadge);
       }
     } else {
       if (cartBadge) {
@@ -227,46 +249,86 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
   
-  // Remove item
+  // Remove item with Bootstrap modal
+  let pendingDeleteProductId = null;
+  let pendingDeleteBtn = null;
+  let pendingDeleteItem = null;
+  
+  const deleteModal = new bootstrap.Modal(document.getElementById('deleteCartItemModal'));
+  const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+  
   document.querySelectorAll('.cart-remove-btn').forEach(btn => {
     btn.addEventListener('click', function() {
-      if (!confirm('{% trans "Are you sure you want to remove this item from your cart?" %}')) {
-        return;
-      }
-      
       const productId = this.getAttribute('data-product-id');
       const item = this.closest('.cart-item');
-      const removeBtn = this;
       
-      removeBtn.disabled = true;
+      // Store the product ID and button for later use
+      pendingDeleteProductId = productId;
+      pendingDeleteBtn = this;
+      pendingDeleteItem = item;
       
-      const formData = new FormData();
-      formData.append('csrfmiddlewaretoken', getCSRFToken());
-      
-      fetch(`${langPrefix}/cart/remove/${productId}/`, {
-        method: 'POST',
-        body: formData,
-        headers: {
-          'X-Requested-With': 'XMLHttpRequest'
-        }
-      })
-      .then(response => response.json())
-      .then(data => {
-        if (data.success) {
-          removeCartItem(productId);
-          document.getElementById('cart-total').textContent = data.cart_total;
-          updateCartCount(data.cart_count);
-        } else {
-          alert(data.message);
-          removeBtn.disabled = false;
-        }
-      })
-      .catch(error => {
-        console.error('Error:', error);
-        alert('{% trans "An error occurred. Please try again." %}');
-        removeBtn.disabled = false;
-      });
+      // Show the modal
+      deleteModal.show();
     });
+  });
+  
+  // Handle confirmation in modal
+  confirmDeleteBtn.addEventListener('click', function() {
+    if (!pendingDeleteProductId) return;
+    
+    const productId = pendingDeleteProductId;
+    const removeBtn = pendingDeleteBtn;
+    
+    // Hide the modal
+    deleteModal.hide();
+    
+    // Disable the button during request
+    removeBtn.disabled = true;
+    
+    const formData = new FormData();
+    formData.append('csrfmiddlewaretoken', getCSRFToken());
+    
+    fetch(`${langPrefix}/cart/remove/${productId}/`, {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'X-Requested-With': 'XMLHttpRequest'
+      }
+    })
+    .then(response => response.json())
+    .then(data => {
+      if (data.success) {
+        removeCartItem(productId);
+        document.getElementById('cart-total').textContent = data.cart_total;
+        updateCartCount(data.cart_count);
+      } else {
+        alert(data.message);
+        removeBtn.disabled = false;
+      }
+      // Reset pending delete variables
+      pendingDeleteProductId = null;
+      pendingDeleteBtn = null;
+      pendingDeleteItem = null;
+    })
+    .catch(error => {
+      console.error('Error:', error);
+      alert('{% trans "An error occurred. Please try again." %}');
+      removeBtn.disabled = false;
+      // Reset pending delete variables
+      pendingDeleteProductId = null;
+      pendingDeleteBtn = null;
+      pendingDeleteItem = null;
+    });
+  });
+  
+  // Reset pending delete when modal is closed without confirming
+  document.getElementById('deleteCartItemModal').addEventListener('hidden.bs.modal', function() {
+    if (pendingDeleteBtn) {
+      pendingDeleteBtn.disabled = false;
+    }
+    pendingDeleteProductId = null;
+    pendingDeleteBtn = null;
+    pendingDeleteItem = null;
   });
 });
 </script>

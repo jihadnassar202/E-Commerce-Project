@@ -42,7 +42,7 @@ msgid "Admin Products"
 msgstr "منتجات المسؤول"
 
 msgid "View Cart"
-msgstr "عرض السلة"
+msgstr "السلة"
 
 msgid "Logout"
 msgstr "تسجيل الخروج"
