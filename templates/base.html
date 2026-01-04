@@ -140,6 +140,20 @@
       color: black;
     }
 
+    /* Force navbar to always use LTR layout */
+    .navbar {
+      direction: ltr !important;
+    }
+
+    .navbar .navbar-nav {
+      direction: ltr !important;
+    }
+
+    /* Prevent RTL from reversing navbar layout */
+    [dir="rtl"] .navbar .navbar-nav.d-flex.flex-row {
+      flex-direction: row !important;
+    }
+
     /* RTL Support */
     [dir="rtl"] .navbar-nav.d-flex.flex-row {
       flex-direction: row-reverse;
@@ -187,7 +201,7 @@
 </head>
 
 <body>
-  <nav class="navbar navbar-expand-lg" style="background-color: #2d5016;">
+  <nav class="navbar navbar-expand-lg" style="background-color: #2d5016;" dir="ltr">
     <div class="container">
       <a class="navbar-brand text-white fw-bold" href="{% url 'home' %}">{% trans "E-Commerce" %}</a>
 
@@ -197,7 +211,7 @@
       </button>
 
       <div class="collapse navbar-collapse" id="nav">
-        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <ul class="navbar-nav ms-3 mb-2 mb-lg-0">
           <li class="nav-item">
             <a class="nav-link text-white" href="{% url 'home' %}">{% trans "Home" %}</a>
           </li>
@@ -230,7 +244,7 @@
           {% endif %}
         </ul>
 
-        <ul class="navbar-nav d-flex flex-row align-items-center" style="gap: 1rem;">
+        <ul class="navbar-nav d-flex flex-row align-items-center ms-auto" style="gap: 1rem;">
           <li class="nav-item">
             <form action="{% url 'set_language' %}" method="post" class="d-inline">
               {% csrf_token %}
