@@ -19,7 +19,7 @@ from .models import Order, OrderItem
 CURRENCY_PRECISION = Decimal("0.01")
 
 # Cart expiry: 24 hours
-CART_EXPIRY_HOURS = 24
+CART_EXPIRY_HOURS = 0.01
 
 
 def _quantize_currency(value):
@@ -30,12 +30,7 @@ def _quantize_currency(value):
 
 
 def _get_cart(session):
-    """
-    Cart stored in session as:
-    session["cart"] = { "<product_id>": <qty>, ... }
-    session["cart_created_at"] = timestamp
-    product_id keys are ALWAYS strings.
-    """
+
     cart = session.get("cart")
     if cart is None:
         cart = {}
@@ -63,13 +58,7 @@ def _is_cart_expired(session):
 
 
 def _validate_and_clean_cart(session):
-    """
-    Validate and clean cart to remove invalid states:
-    - Remove items with negative or zero quantities
-    - Remove items for products that don't exist or are inactive
-    - Adjust quantities that exceed available stock
-    Returns: (cleaned_cart, removed_items)
-    """
+   
     cart = _get_cart(session)
     if not cart:
         return cart, []
@@ -180,9 +169,10 @@ def cart_detail(request):
         request.session["cart"] = {}
         request.session["cart_created_at"] = timezone.now().isoformat()
         request.session.modified = True
-        messages.warning(request, _("Your cart has expired and has been cleared. Items are reserved for 24 hours."))
+        messages.warning(request, _(
+            "Your cart has expired and has been cleared. Items are reserved for 24 hours."))
         return redirect("product_list")
-    
+
     # Validate and clean cart to remove invalid states
     cleaned_cart, removed_items = _validate_and_clean_cart(request.session)
 
@@ -218,7 +208,9 @@ def cart_add(request, product_id):
         request.session["cart"] = {}
         request.session["cart_created_at"] = timezone.now().isoformat()
         request.session.modified = True
-    
+        messages.warning(request, _(
+            "Your cart has expired and has been cleared. Items are reserved for 24 hours."))
+
     product = get_object_or_404(Product, pk=product_id, is_active=True)
 
     # Ownership validation: prevent sellers from purchasing their own products
@@ -237,7 +229,8 @@ def cart_add(request, product_id):
                 'success': False,
                 'message': _("%(product_name)s is sold out.") % {'product_name': product.name}
             }, status=400)
-        messages.error(request, _("%(product_name)s is sold out.") % {'product_name': product.name})
+        messages.error(request, _("%(product_name)s is sold out.") %
+                       {'product_name': product.name})
         return redirect("product_list")
 
     # Get quantity from form, default to 1
@@ -276,7 +269,8 @@ def cart_add(request, product_id):
                 'success': False,
                 'message': _("Only %(stock)d left in stock.") % {'stock': product.stock}
             }, status=400)
-        messages.error(request, _("Only %(stock)d left in stock.") % {'stock': product.stock})
+        messages.error(request, _("Only %(stock)d left in stock.") %
+                       {'stock': product.stock})
         return redirect("product_list")
 
     cart[pid] = new_qty
@@ -290,7 +284,8 @@ def cart_add(request, product_id):
             'new_quantity': new_qty
         })
 
-    messages.success(request, _("Added %(product_name)s to cart.") % {'product_name': product.name})
+    messages.success(request, _("Added %(product_name)s to cart.") % {
+                     'product_name': product.name})
     return redirect("product_list")
 
 
@@ -299,6 +294,15 @@ def cart_update(request, product_id):
     """
     Update quantity for a cart item.
     """
+    # Check if cart has expired
+    if _is_cart_expired(request.session):
+        request.session["cart"] = {}
+        request.session["cart_created_at"] = timezone.now().isoformat()
+        request.session.modified = True
+        messages.warning(request, _(
+            "Your cart has expired and has been cleared. Items are reserved for 24 hours."))
+        return redirect("cart_detail")
+
     cart = _get_cart(request.session)
     pid = str(product_id)
     if pid not in cart:
@@ -322,7 +326,8 @@ def cart_update(request, product_id):
     if request.user.is_authenticated and product.owner == request.user:
         del cart[pid]
         request.session.modified = True
-        messages.error(request, "You cannot purchase your own products. Item removed from cart.")
+        messages.error(
+            request, "You cannot purchase your own products. Item removed from cart.")
         return redirect("cart_detail")
 
     # Validate quantity doesn't exceed stock
@@ -376,6 +381,15 @@ def cart_remove(request, product_id):
 @require_POST
 def cart_increment(request, product_id):
     """Increment quantity by 1."""
+    # Check if cart has expired
+    if _is_cart_expired(request.session):
+        request.session["cart"] = {}
+        request.session["cart_created_at"] = timezone.now().isoformat()
+        request.session.modified = True
+        messages.warning(request, _(
+            "Your cart has expired and has been cleared. Items are reserved for 24 hours."))
+        return redirect("cart_detail")
+
     cart = _get_cart(request.session)
     pid = str(product_id)
 
@@ -399,7 +413,8 @@ def cart_increment(request, product_id):
                 'message': _("You cannot purchase your own products. Item removed from cart."),
                 'removed': True
             }, status=400)
-        messages.error(request, _("You cannot purchase your own products. Item removed from cart."))
+        messages.error(request, _(
+            "You cannot purchase your own products. Item removed from cart."))
         return redirect("cart_detail")
 
     # Validate current quantity
@@ -418,7 +433,8 @@ def cart_increment(request, product_id):
                 'quantity': current_qty,
                 'max_quantity': product.stock
             }, status=400)
-        messages.error(request, _("Only %(stock)d left in stock.") % {'stock': product.stock})
+        messages.error(request, _("Only %(stock)d left in stock.") %
+                       {'stock': product.stock})
         return redirect("cart_detail")
 
     cart[pid] = new_qty
@@ -444,6 +460,15 @@ def cart_increment(request, product_id):
 @require_POST
 def cart_decrement(request, product_id):
     """Decrement quantity by 1, remove if reaches 0."""
+    # Check if cart has expired
+    if _is_cart_expired(request.session):
+        request.session["cart"] = {}
+        request.session["cart_created_at"] = timezone.now().isoformat()
+        request.session.modified = True
+        messages.warning(request, _(
+            "Your cart has expired and has been cleared. Items are reserved for 24 hours."))
+        return redirect("cart_detail")
+
     cart = _get_cart(request.session)
     pid = str(product_id)
 
@@ -508,9 +533,10 @@ def checkout(request):
         request.session["cart"] = {}
         request.session["cart_created_at"] = timezone.now().isoformat()
         request.session.modified = True
-        messages.warning(request, _("Your cart has expired and has been cleared. Items are reserved for 24 hours."))
+        messages.warning(request, _(
+            "Your cart has expired and has been cleared. Items are reserved for 24 hours."))
         return redirect("cart_detail")
-    
+
     # Validate and clean cart before checkout
     cleaned_cart, removed_items = _validate_and_clean_cart(request.session)
 
@@ -579,7 +605,8 @@ def checkout(request):
                         continue
 
                     if product.stock <= 0:
-                        errors.append(_("%(product_name)s is sold out.") % {'product_name': product.name})
+                        errors.append(_("%(product_name)s is sold out.") % {
+                                      'product_name': product.name})
                     elif product.stock < qty:
                         errors.append(
                             _("%(product_name)s: Only %(stock)d available, but %(qty)d requested.") % {
@@ -631,7 +658,8 @@ def checkout(request):
                 return redirect("order_success", order_id=order.pk)
 
         except ValueError as e:
-            messages.error(request, _("Invalid data in cart: %(error)s") % {'error': str(e)})
+            messages.error(request, _("Invalid data in cart: %(error)s") % {
+                           'error': str(e)})
             return redirect("cart_detail")
         except Exception as e:
             # Log the actual error for debugging
@@ -683,11 +711,12 @@ def orders_list(request):
         ).distinct().prefetch_related("items__product", "items__product__owner", "user").order_by("-created_at")
     elif request.user.is_staff:
         # Admin view: show all orders
-        orders = Order.objects.all().prefetch_related("items__product", "items__product__owner", "user").order_by("-created_at")
+        orders = Order.objects.all().prefetch_related(
+            "items__product", "items__product__owner", "user").order_by("-created_at")
     else:
         # Regular user: redirect to my_orders
         return redirect("my_orders")
-    
+
     paginator = Paginator(orders, 15)
     page_obj = paginator.get_page(request.GET.get("page"))
     return render(request, "orders/orders_list.html", {"page_obj": page_obj, "is_seller_view": is_seller(request.user) and not request.user.is_staff})
@@ -698,20 +727,21 @@ def orders_list(request):
 def order_item_update_status(request, item_id):
     """Update order item status. Sellers can only update items for their own products."""
     item = get_object_or_404(OrderItem, pk=item_id)
-    
+
     # Permission check: sellers can only update items for their own products, admins can update any
     if not request.user.is_staff:
         if not is_seller(request.user) or item.product.owner != request.user:
-            messages.error(request, _("You don't have permission to update this item."))
+            messages.error(request, _(
+                "You don't have permission to update this item."))
             return redirect("orders_list")
-    
+
     new_status = request.POST.get("status")
     valid_statuses = [choice[0] for choice in OrderItem.STATUS_CHOICES]
-    
+
     if new_status not in valid_statuses:
         messages.error(request, _("Invalid status."))
         return redirect("orders_list")
-    
+
     item.status = new_status
     item.save()
     messages.success(request, _("Order item status updated."))
